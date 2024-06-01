@@ -31,7 +31,8 @@ public class ConfigAdapter extends RecyclerView.Adapter<ConfigAdapter.ViewHolder
 
     public ConfigAdapter addAll(int type) {
         mItems = Config.getAll(type);
-        mItems.remove(type == 0 ? VodConfig.get().getConfig() : LiveConfig.get().getConfig());
+        //移除当前生效的接口配置
+//        mItems.remove(type == 0 ? VodConfig.get().getConfig() : LiveConfig.get().getConfig());
         return this;
     }
 

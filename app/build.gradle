@@ -2,6 +2,10 @@ plugins {
     id 'com.android.application'
 }
 
+def keystorePropertiesFile = rootProject.file("Keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
 android {
     compileSdk 34
     flavorDimensions = ["mode", "api", "abi"]
@@ -50,11 +54,28 @@ android {
         viewBinding true
     }
 
+    signingConfigs {
+        config {
+            keyAlias keystoreProperties['yeskeyAlias']
+            keyPassword keystoreProperties['yeskeyPassword']
+            storeFile file(keystoreProperties['yesstoreFilePath'])
+            storePassword keystoreProperties['yesstorePassword']
+
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+        debug {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
         }
     }
 
