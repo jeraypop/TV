@@ -64,6 +64,7 @@
 
 # QuickJS
 -keep class com.whl.quickjs.** { *; }
+-keep class com.fongmi.quickjs.** { *; }
 
 # Sardine
 -keep class com.thegrizzlylabs.sardineandroid.** { *; }
