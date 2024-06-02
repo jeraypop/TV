@@ -207,6 +207,8 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, Custom
         mBinding.control.action.speed.setOnLongClickListener(view -> onSpeedLong());
         mBinding.control.action.getRoot().setOnTouchListener(this::onActionTouch);
         mBinding.video.setOnTouchListener((view, event) -> mKeyDown.onTouchEvent(event));
+
+        mBinding.control.back.setOnClickListener(view -> onBack());
     }
 
     private void setRecyclerView() {

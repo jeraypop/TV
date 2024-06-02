@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
@@ -18,6 +19,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -373,6 +375,15 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mBinding.control.action.getRoot().setOnTouchListener(this::onActionTouch);
         mBinding.swipeLayout.setOnRefreshListener(this::onSwipeRefresh);
         mBinding.control.seek.setListener(mPlayers);
+
+        mBinding.control.action.openingStart.setOnClickListener(view -> onOpeningStart());
+        mBinding.control.action.openingStartHou.setOnClickListener(view -> onOpeningStartHou());
+        mBinding.control.action.endingEnd.setOnClickListener(view -> onEndingEnd());
+        mBinding.control.action.endingEndHou.setOnClickListener(view -> onEndingEndHou());
+        mBinding.control.back.setOnClickListener(view ->
+                onBack()
+        );
+
     }
 
     private void setRecyclerView() {
@@ -742,6 +753,16 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         setR1Callback();
         toggleFullscreen();
     }
+    private void onBack() {
+        if (isFullscreen()) {
+            onFull();
+        } else {
+            stopSearch();
+            //调用父类返回键方法super.onBackPressed();  该方法默认会调用 finish()
+            finish();
+        }
+    }
+
 
     private void onKeep() {
         Keep keep = Keep.find(getHistoryKey());
@@ -897,6 +918,48 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mBinding.control.action.opening.setText(mPlayers.stringToTime(mHistory.getOpening()));
         setR1Callback();
     }
+    private void onOpeningStart() {
+        if (mHistory.getOpening()>1000) {
+            mHistory.setOpening(mHistory.getOpening()-1000);
+        } else {
+            mHistory.setOpening(0);
+        }
+//        SharedPreferences.Editor editor = getSharedPreferences("skipstartend" , MODE_PRIVATE).edit();
+//        editor.putLong("start" , mHistory.getOpening());
+//        editor.apply();
+        mBinding.control.action.opening.setText(mPlayers.stringToTime(mHistory.getOpening()));
+        setR1Callback();
+    }
+
+    private void onOpeningStartHou() {
+        long duration = mPlayers.getDuration();
+        if (mHistory.getOpening()+1000<=duration) {
+            mHistory.setOpening(mHistory.getOpening()+1000);
+        } else {
+            mHistory.setOpening(duration);
+        }
+        mBinding.control.action.opening.setText(mPlayers.stringToTime(mHistory.getOpening()));
+        setR1Callback();
+    }
+    private void onEndingEnd() {
+        if (mHistory.getEnding()>1000) {
+            mHistory.setEnding(mHistory.getEnding()-1000);
+        } else {
+            mHistory.setEnding(0);
+        }
+        mBinding.control.action.ending.setText(mPlayers.stringToTime(mHistory.getEnding()));
+        setR1Callback();
+    }
+    private void onEndingEndHou() {
+        long duration = mPlayers.getDuration();
+        if (mHistory.getEnding()+1000<=duration) {
+            mHistory.setEnding(mHistory.getEnding()+1000);
+        } else {
+            mHistory.setEnding(duration);
+        }
+        mBinding.control.action.ending.setText(mPlayers.stringToTime(mHistory.getEnding()));
+        setR1Callback();
+    }
 
     private boolean onOpeningReset() {
         mHistory.setOpening(0);
@@ -1031,7 +1094,8 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode()) return;
         mBinding.control.danmu.setVisibility(isLock() || !mBinding.danmaku.isPrepared() ? View.GONE : View.VISIBLE);
         mBinding.control.danmuSetting.setVisibility(isLock() || !Setting.isDanmuLoad() || !isVisible(mBinding.danmaku) ? View.GONE : View.VISIBLE);
-        mBinding.control.setting.setVisibility(mHistory == null || isFullscreen() ? View.GONE : View.VISIBLE);
+        //mBinding.control.setting.setVisibility(mHistory == null || isFullscreen() ? View.GONE : View.VISIBLE);
+        mBinding.control.setting.setVisibility(mHistory == null ? View.GONE : View.VISIBLE);
         mBinding.control.batteryInfo.setVisibility(isFullscreen() ? View.VISIBLE : View.GONE);
         mBinding.control.right.rotate.setVisibility(isFullscreen() && !isLock() ? View.VISIBLE : View.GONE);
         mBinding.control.keep.setVisibility(mHistory == null ? View.GONE : View.VISIBLE);
@@ -1301,6 +1365,9 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void setTrackVisible(boolean visible) {
+        if (true) {
+          return;
+        }
         mBinding.control.action.text.setVisibility(visible && (mPlayers.haveTrack(C.TRACK_TYPE_TEXT) || mPlayers.isExo()) ? View.VISIBLE : View.GONE);
         mBinding.control.action.audio.setVisibility(visible && mPlayers.haveTrack(C.TRACK_TYPE_AUDIO) ? View.VISIBLE : View.GONE);
         mBinding.control.action.video.setVisibility(visible && mPlayers.haveTrack(C.TRACK_TYPE_VIDEO) ? View.VISIBLE : View.GONE);

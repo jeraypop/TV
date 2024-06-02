@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:fillViewport="true"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
@@ -12,16 +13,20 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/player"
             style="@style/Control.Action"
+            android:visibility="gone"
             tools:text="EXO" />
 
         <TextView
             android:id="@+id/decode"
             style="@style/Control.Action"
+            android:visibility="gone"
             tools:text="硬解" />
 
         <TextView
@@ -32,23 +37,28 @@
         <TextView
             android:id="@+id/scale"
             style="@style/Control.Action"
+            android:visibility="gone"
             tools:text="縮放" />
 
         <TextView
             android:id="@+id/reset"
             style="@style/Control.Action"
             android:textColor="@color/text"
+            android:visibility="gone"
             tools:text="刷新" />
 
         <TextView
             android:id="@+id/loop"
             style="@style/Control.Action"
+            android:visibility="gone"
             android:text="@string/play_loop"
             android:textColor="@color/text" />
 
+        <!-- no gone 居两边显示 -->
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:visibility="gone"
             android:layout_weight="1" />
 
         <TextView
@@ -89,6 +99,45 @@
             android:id="@+id/episodes"
             style="@style/Control.Action"
             android:text="@string/detail_episode" />
+
+        <ImageView
+            android:id="@+id/openingStart"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/exo_icon_previous"
+            />
+        <ImageView
+            android:id="@+id/openingStartHou"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/exo_icon_next"
+          
+            />
+        <ImageView
+            android:id="@+id/endingEnd"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/exo_icon_previous"
+            />
+        <ImageView
+            android:id="@+id/endingEndHou"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:src="@drawable/exo_icon_next"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            />
+
 
     </LinearLayout>
 </HorizontalScrollView>

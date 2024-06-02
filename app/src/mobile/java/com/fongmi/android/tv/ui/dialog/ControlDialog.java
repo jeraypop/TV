@@ -1,8 +1,10 @@
 package com.fongmi.android.tv.ui.dialog;
 
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -125,6 +127,12 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
         binding.dpspeed.setOnClickListener(v -> displaySpeed());
         binding.dpduration.setOnClickListener(v -> displayDuration());
         binding.dpminiprogress.setOnClickListener(v -> displayMiniProgress());
+        
+        binding.openingStart.setOnClickListener(v -> clickSmallTuning(binding.opening, parent.control.action.openingStart,true));
+        binding.openingStartHou.setOnClickListener(v -> clickSmallTuning(binding.opening, parent.control.action.openingStartHou,true));
+        binding.endingEnd.setOnClickListener(v -> clickSmallTuning(binding.ending, parent.control.action.endingEnd,false));
+        binding.endingEndHou.setOnClickListener(v -> clickSmallTuning(binding.ending, parent.control.action.endingEndHou,false));
+
     }
 
     private void displayTime() {
@@ -194,6 +202,11 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
     private void click(TextView view, TextView target) {
         target.performClick();
         view.setText(target.getText());
+    }
+    //微调
+    private void clickSmallTuning(TextView view, ImageView target,boolean isStart) {
+        target.performClick();
+        view.setText(player.stringToTime(isStart ? history.getOpening() : history.getEnding()));
     }
 
     private boolean longClick(TextView view, TextView target) {
