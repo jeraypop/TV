@@ -19,11 +19,18 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="20sp"
             android:textStyle="bold" />
-
         <TextView
             android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_marginTop="5dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="【下方http开头的链接,长按可复制,单击可分享此地址或下载该视频(如果已安装 1DM+ )】"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp" />
 

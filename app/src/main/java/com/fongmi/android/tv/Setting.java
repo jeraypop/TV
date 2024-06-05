@@ -381,6 +381,12 @@ public class Setting {
     public static void putPlaySpeed(float speed) {
         Prefers.put("play_speed", speed);
     }
+    public static float getLongPlaySpeed() {
+        return Prefers.getFloat("play_speed_long", 1.0f);
+    }
+    public static void putLongPlaySpeed(float speed) {
+        Prefers.put("play_speed_long", speed);
+    }
 
     public static void putFullscreenMenuKey(int key) {
         Prefers.put("fullscreen_menu_key", key);

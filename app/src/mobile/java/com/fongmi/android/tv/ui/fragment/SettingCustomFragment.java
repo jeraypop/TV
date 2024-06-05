@@ -47,6 +47,7 @@ public class SettingCustomFragment extends BaseFragment {
         mBinding.sizeText.setText((size = ResUtil.getStringArray(R.array.select_size))[Setting.getSize()]);
         mBinding.danmuSyncText.setText(getSwitch(Setting.isDanmuSync()));
         mBinding.speedText.setText(getSpeedText());
+        mBinding.speedTextLong.setText(getLongSpeedText());
         mBinding.incognitoText.setText(getSwitch(Setting.isIncognito()));
         mBinding.aggregatedSearchText.setText(getSwitch(Setting.isAggregatedSearch()));
         mBinding.homeDisplayNameText.setText(getSwitch(Setting.isHomeDisplayName()));
@@ -62,6 +63,8 @@ public class SettingCustomFragment extends BaseFragment {
         mBinding.danmuSync.setOnClickListener(this::setDanmuSync);
         mBinding.speed.setOnClickListener(this::setSpeed);
         mBinding.speed.setOnLongClickListener(this::resetSpeed);
+        mBinding.speedlongclick.setOnClickListener(this::setLongSpeed);
+        mBinding.speedlongclick.setOnLongClickListener(this::resetLongSpeed);
         mBinding.incognito.setOnClickListener(this::setIncognito);
         mBinding.aggregatedSearch.setOnClickListener(this::setAggregatedSearch);
         mBinding.homeDisplayName.setOnClickListener(this::setHomeDisplayName);
@@ -94,7 +97,9 @@ public class SettingCustomFragment extends BaseFragment {
     private String getSpeedText() {
         return String.format(Locale.getDefault(), "%.2f", Setting.getPlaySpeed());
     }
-
+    private String getLongSpeedText() {
+        return String.format(Locale.getDefault(), "%.2f", Setting.getLongPlaySpeed());
+    }
     private void setSpeed(View view) {
         float speed = Setting.getPlaySpeed();
         float addon = speed >= 2 ? 1.0f : 0.1f;
@@ -102,10 +107,22 @@ public class SettingCustomFragment extends BaseFragment {
         Setting.putPlaySpeed(speed);
         mBinding.speedText.setText(getSpeedText());
     }
+    private void setLongSpeed(View view) {
+        float speed = Setting.getLongPlaySpeed();
+        float addon = speed >= 2 ? 1.0f : 1.0f;
+        speed = speed >= 5 ? 1.0f : Math.min(speed + addon, 5.0f);
+        Setting.putLongPlaySpeed(speed);
+        mBinding.speedTextLong.setText(getLongSpeedText());
+    }
 
     private boolean resetSpeed(View view) {
         Setting.putPlaySpeed(1.0f);
         mBinding.speedText.setText(getSpeedText());
+        return true;
+    }
+    private boolean resetLongSpeed(View view) {
+        Setting.putLongPlaySpeed(1.0f);
+        mBinding.speedTextLong.setText(getLongSpeedText());
         return true;
     }
 

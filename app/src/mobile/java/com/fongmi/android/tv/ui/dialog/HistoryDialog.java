@@ -15,6 +15,7 @@ import com.fongmi.android.tv.impl.ConfigCallback;
 import com.fongmi.android.tv.ui.adapter.ConfigAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.Util;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class HistoryDialog implements ConfigAdapter.OnClickListener {
@@ -67,9 +68,8 @@ public class HistoryDialog implements ConfigAdapter.OnClickListener {
 
     private static void getClipboard(String url) {
         //复制地址到剪切板
-        ClipboardManager cmb = (ClipboardManager) App.get().getSystemService(Context.CLIPBOARD_SERVICE);
-        cmb.setText(url);
-        Notify.show("已复制    "+url);
+        Notify.show(App.get().getString(R.string.copied)+"   "+url);
+        Util.copy(url);
     }
 
     @Override

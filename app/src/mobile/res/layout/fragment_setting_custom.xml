@@ -124,6 +124,33 @@
                     tools:text="x1" />
 
             </LinearLayout>
+            <!--长按搜索-->
+            <LinearLayout
+                android:id="@+id/speedlongclick"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/shape_item"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
+                    android:text="@string/play_speedlong"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/speedTextLong"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    tools:text="x1" />
+
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/incognito"

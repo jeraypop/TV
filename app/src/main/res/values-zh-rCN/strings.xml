@@ -1,7 +1,7 @@
 <resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
 
     <!-- App -->
-    <string name="app_name">趣影视</string>
+    <string name="app_name">趣TV</string>
     <string name="app_exit">再按一次返回键退出</string>
 
     <!-- Vod -->
@@ -43,6 +43,7 @@
     <string name="play_danmu">弹幕</string>
     <string name="play_display">屏显</string>
     <string name="play_speed">倍速</string>
+    <string name="play_speedlong">长按倍速</string>
     <string name="play_change">换源</string>
     <string name="play_forward">→</string>
     <string name="play_backward">←</string>

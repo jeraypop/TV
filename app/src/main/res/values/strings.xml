@@ -43,6 +43,7 @@
     <string name="play_danmu">Danmu</string>
     <string name="play_display">Display</string>
     <string name="play_speed">Speed</string>
+    <string name="play_speedlong">LongSpeed</string>
     <string name="play_change">Change</string>
     <string name="play_forward">→</string>
     <string name="play_backward">←</string>
