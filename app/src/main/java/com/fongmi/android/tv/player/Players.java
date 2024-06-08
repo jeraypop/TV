@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.VideoSize;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.analytics.AnalyticsListener;
 import androidx.media3.exoplayer.util.EventLogger;
@@ -135,6 +136,7 @@ public class Players implements Player.Listener, IMediaPlayer.Listener, Analytic
         exoPlayer.setAudioAttributes(AudioAttributes.DEFAULT, true);
         exoPlayer.addAnalyticsListener(new EventLogger());
         exoPlayer.setHandleAudioBecomingNoisy(true);
+//        view.setRender(Setting.getRender());
         exoPlayer.addAnalyticsListener(this);
         exoPlayer.setPlayWhenReady(true);
         exoPlayer.addListener(this);
@@ -166,6 +168,10 @@ public class Players implements Player.Listener, IMediaPlayer.Listener, Analytic
         return ijkPlayer;
     }
 
+    public VideoSize getVideoSize() {
+        if (isExo()) return exo().getVideoSize();
+        return new VideoSize(ijk().getVideoWidth(), ijk().getVideoHeight());
+    }
     public Map<String, String> getHeaders() {
         return headers == null ? new HashMap<>() : checkUa(headers);
     }

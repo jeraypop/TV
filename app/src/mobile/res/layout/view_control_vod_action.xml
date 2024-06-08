@@ -54,11 +54,16 @@
             android:text="@string/play_loop"
             android:textColor="@color/text" />
 
-        <!-- no gone 居两边显示 -->
+        <TextView
+            android:id="@+id/opening"
+            style="@style/Control.Action"
+            tools:text="片頭" />
+
+        <!-- android:visibility="gone"  no gone 居两边显示 -->
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:visibility="gone"
+
             android:layout_weight="1" />
 
         <TextView
@@ -85,10 +90,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-        <TextView
-            android:id="@+id/opening"
-            style="@style/Control.Action"
-            tools:text="片頭" />
+
 
         <TextView
             android:id="@+id/ending"

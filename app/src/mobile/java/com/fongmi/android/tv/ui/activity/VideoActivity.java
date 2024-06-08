@@ -251,7 +251,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private PlayerView getExo() {
-        return Setting.getRender() == 0 ? mBinding.surface : mBinding.texture;
+        return mBinding.exo;
     }
 
     private IjkVideoView getIjk() {
@@ -1770,7 +1770,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         super.onUserLeaveHint();
         if (isRedirect()) return;
         if (isLock()) App.post(this::onLock, 500);
-        if (mPlayers.haveTrack(C.TRACK_TYPE_VIDEO)) mPiP.enter(this, getScale() == 2);
+        if (mPlayers.haveTrack(C.TRACK_TYPE_VIDEO)) mPiP.enter(this, mPlayers.getVideoSize(), getScale());
     }
 
     @Override
