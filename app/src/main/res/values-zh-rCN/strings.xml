@@ -1,6 +1,6 @@
 <resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
 
-    <!-- App -->
+    <!-- App 趣TV-->
     <string name="app_name">趣TV</string>
     <string name="app_exit">再按一次返回键退出</string>
 

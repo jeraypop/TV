@@ -4,7 +4,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,11 +72,15 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import okhttp3.Call;
 import okhttp3.Headers;
 import okhttp3.Response;
+
+import static com.github.catvod.utils.Github.URL;
 
 public class VodFragment extends BaseFragment implements SiteCallback, FilterCallback, TypeAdapter.OnClickListener, ConfigCallback {
 
@@ -103,6 +110,10 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
 
     @Override
     protected void initView() {
+        if (!URL.contains("qutvnormal")) {
+            setMoRenConfig();
+        }
+
         EventBus.getDefault().register(this);
         setRecyclerView();
         setAppBarView();
@@ -110,6 +121,58 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
         showProgress();
         initHot();
         getHot();
+    }
+    private void setMoRenConfig() {
+        //========
+        if (Setting.isFirstStartHome()) {
+            Setting.putFirstStartHome(false);
+            // 使用LinkedHashSet，它保留了插入顺序
+            Set<String> linkedHashSet = new LinkedHashSet<>();
+            linkedHashSet.add("http://tvbox.王二小放牛娃.xyz");
+            linkedHashSet.add("https://raw.kkgithub.com/liu673cn/box/main/m.json");
+            linkedHashSet.add("http://肥猫.com/");
+            linkedHashSet.add("http://like.肥猫.com/你好");
+            //linkedHashSet.add("https://www.mpanso.com/小米/DEMO.json");
+            linkedHashSet.add("https://www.饭太硬.com/tv/");
+            linkedHashSet.add("http://ok321.top/tv");
+
+            //// 转换为ArrayList以便按索引访问
+            List<String> list = new ArrayList<>(linkedHashSet);
+            int type = 0;
+            String ori =VodConfig.get().getConfig().getUrl();
+            for (int i = 0; i < list.size(); i++) {
+                int finalI = i;
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 这里写你需要延时执行的代码
+                        String url =  list.get(finalI);
+                        if (url.contains("liu673cn")) {
+                            Config.find(ori, type).url(url).name("刘").update();
+                        } else if (url.contains("王二小")) {
+                            Config.find(ori, type).url(url).name("王二小").update();
+                        } else if (url.contains("肥猫")) {
+                            if (url.contains("你好")) {
+                                Config.find(ori, type).url(url).name("肥猫②").update();
+                            } else {
+                                Config.find(ori, type).url(url).name("肥猫①").update();
+                            }
+                        }else if (url.contains("饭太硬")) {
+                            Config.find(ori, type).url(url).name("饭太硬").update();
+                        }else if (url.contains("ok321")) {
+                            Config.find(ori, type).url(url).name("ok").update();
+                        }else {
+                            Config.find(ori, type).url(url).name("").update();
+                        }
+
+                        if (url.isEmpty()) Config.delete(ori, type);
+                        setConfig(Config.find(url, type));
+                    }
+                }, i*1000); // 延迟时间，单位是毫秒，这里示例为2秒
+            }
+        
+        }
+        //========
     }
 
     @Override

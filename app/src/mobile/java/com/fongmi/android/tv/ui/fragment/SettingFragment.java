@@ -3,6 +3,8 @@ package com.fongmi.android.tv.ui.fragment;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,7 +60,12 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import static com.github.catvod.utils.Github.URL;
 
 public class SettingFragment extends BaseFragment implements ConfigCallback, SiteCallback, LiveCallback, ProxyCallback {
 
@@ -99,8 +106,64 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
         mBinding.versionText.setText(BuildConfig.VERSION_NAME);
         mBinding.backupText.setText((backup = ResUtil.getStringArray(R.array.select_backup))[Setting.getBackupMode()]);
         mBinding.aboutText.setText(BuildConfig.FLAVOR_mode + "-" + BuildConfig.FLAVOR_api + "-" + BuildConfig.FLAVOR_abi);
+        if (!URL.contains("qutvnormal")) {
+            mBinding.aboutText.setText("石艳,我爱你,希望你快乐幸福!");
+        }
         mBinding.proxyText.setText(UrlUtil.scheme(Setting.getProxy()));
         setCacheText();
+        if (!URL.contains("qutvnormal")) {
+            setMoRenConfig();
+        }
+    }
+    private void setMoRenConfig() {
+        //========
+        if (Setting.isFirstStartSetting()) {
+            Setting.putFirstStartSetting(false);
+            // 使用LinkedHashSet，它保留了插入顺序
+            Set<String> linkedHashSet = new LinkedHashSet<>();
+            linkedHashSet.add("http://tvbox.王二小放牛娃.xyz");
+            linkedHashSet.add("https://raw.kkgithub.com/liu673cn/box/main/m.json");
+            linkedHashSet.add("http://肥猫.com/");
+            linkedHashSet.add("http://like.肥猫.com/你好");
+//            linkedHashSet.add("https://www.mpanso.com/小米/DEMO.json");
+            linkedHashSet.add("https://www.饭太硬.com/tv/");
+            linkedHashSet.add("http://ok321.top/tv");
+            List<String> list = new ArrayList<>(linkedHashSet); // 转换为ArrayList以便按索引访问
+            String ori =VodConfig.get().getConfig().getUrl();
+            int type = 0;
+            for (int i = 0; i < list.size(); i++) {
+                int finalI = i;
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 这里写你需要延时执行的代码
+                        String url =  list.get(finalI);
+                        if (url.contains("liu673cn")) {
+                            Config.find(ori, type).url(url).name("刘").update();
+                        }else if (url.contains("王二小")) {
+                            Config.find(ori, type).url(url).name("王二小").update();
+                        } else if (url.contains("肥猫")) {
+                            if (url.contains("你好")) {
+                                Config.find(ori, type).url(url).name("肥猫②").update();
+                            } else {
+                                Config.find(ori, type).url(url).name("肥猫①").update();
+                            }
+
+                        }else if (url.contains("饭太硬")) {
+                            Config.find(ori, type).url(url).name("饭太硬").update();
+                        }else if (url.contains("ok321")) {
+                            Config.find(ori, type).url(url).name("ok").update();
+                        } else {
+                            Config.find(ori, type).url(url).name("").update();
+                        }
+
+                        if (url.isEmpty()) Config.delete(ori, type);
+                        setConfig(Config.find(url, type));
+                    }
+                }, i*1000); // 延迟时间，单位是毫秒，这里示例为2秒
+            }
+        }
+        //========
     }
 
     private void setCacheText() {
@@ -272,6 +335,9 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
 
     private void onAbout(View view) {
         mBinding.aboutText.setText(BuildConfig.FLAVOR_mode + "-" + BuildConfig.FLAVOR_api + "-" + BuildConfig.FLAVOR_abi);
+        if (!URL.contains("qutvnormal")) {
+            mBinding.aboutText.setText("我爱你石艳,你一定要快乐幸福!");
+        }
     }
 
     private void onVersion(View view) {
@@ -353,7 +419,7 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
     }
 
     private void onRestore(View view) {
-        FileChooser.from(this).type(FileChooser.TYPE_RESTORE).show();
+        FileChooser.from(this).type(FileChooser.TYPE_RESTORE).show(FileChooser.getUri("TV"));
     }
 
     private void onTransmit(View view) {

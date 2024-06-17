@@ -381,10 +381,24 @@ public class Setting {
         Prefers.put("play_speed", speed);
     }
     public static float getLongPlaySpeed() {
-        return Prefers.getFloat("play_speed_long", 1.0f);
+        return Prefers.getFloat("play_speed_long", 3.0f);
     }
     public static void putLongPlaySpeed(float speed) {
         Prefers.put("play_speed_long", speed);
+    }
+    public static boolean isFirstStartSetting() {
+        return Prefers.getBoolean("first_start_setting", true);
+    }
+
+    public static void putFirstStartSetting(boolean isFirst) {
+        Prefers.put("first_start_setting", isFirst);
+    }
+    public static boolean isFirstStartHome() {
+        return Prefers.getBoolean("first_start_home", true);
+    }
+
+    public static void putFirstStartHome(boolean isFirst) {
+        Prefers.put("first_start_home", isFirst);
     }
 
     public static void putFullscreenMenuKey(int key) {

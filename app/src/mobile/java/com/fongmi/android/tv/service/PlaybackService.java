@@ -140,6 +140,11 @@ public class PlaybackService extends Service {
         startForeground(ID, buildNotification());
         return START_NOT_STICKY;
     }
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        stopSelf();
+    }
+
 
     @Override
     public void onDestroy() {
