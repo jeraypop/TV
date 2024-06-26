@@ -31,10 +31,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="-12dp"
                 android:layout_marginEnd="-12dp"
-                android:stepSize="0.1"
-                android:valueFrom="0.2"
+                android:stepSize="0.25"
+                android:valueFrom="0.5"
                 android:valueTo="5"
-                app:tickVisible="false"
                 app:trackColorInactive="@color/blue_50" />
 
             <TextView
@@ -299,9 +298,15 @@
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="16sp" />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:fillViewport="true"
+                android:scrollbars="none">
+
+            <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
                 <TextView
@@ -334,16 +339,31 @@
                     android:textColor="@color/control"
                     android:textSize="14sp" />
 
+
+
                 <TextView
                     android:id="@+id/dpminiprogress"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
                     android:background="@drawable/shape_accent"
                     android:text="@string/play_mini_progress"
                     android:textColor="@color/control"
                     android:textSize="14sp" />
 
+                <TextView
+                    android:id="@+id/dpvideotitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/shape_accent"
+                    android:text="@string/play_video_title"
+                    android:textColor="@color/control"
+                    android:textSize="14sp" />
+
             </LinearLayout>
+
+            </HorizontalScrollView>
 
             <TextView
                 android:id="@+id/other"

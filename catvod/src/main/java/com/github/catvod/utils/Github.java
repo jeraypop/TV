@@ -9,8 +9,8 @@ import java.io.File;
 public class Github {
 
 //    public static final String URL = "https://my.t4tv.hz.cz";
-//    public static final String URL = "https://gitlab.com/zhuli2/xiaoxizhuli/-/raw/main/qutv";
-    public static final String URL = "https://gitlab.com/zhuli2/xiaoxizhuli/-/raw/main/qutvnormal";
+    public static final String URL = "https://gitlab.com/zhuli2/xiaoxizhuli/-/raw/main/qutv";
+//    public static final String URL = "https://gitlab.com/zhuli2/xiaoxizhuli/-/raw/main/qutvnormal";
     private static String getUrl(String path, String name) {
         return URL + "/" + path + "/" + name;
     }

@@ -27,15 +27,17 @@ import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.databinding.FragmentSettingBinding;
 import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.event.RefreshEvent;
+import com.fongmi.android.tv.impl.BackupCallback;
 import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.impl.ConfigCallback;
 import com.fongmi.android.tv.impl.LiveCallback;
 import com.fongmi.android.tv.impl.ProxyCallback;
 import com.fongmi.android.tv.impl.SiteCallback;
-import com.fongmi.android.tv.player.ExoUtil;
+
 import com.fongmi.android.tv.player.Source;
 import com.fongmi.android.tv.ui.activity.MainActivity;
 import com.fongmi.android.tv.ui.base.BaseFragment;
+import com.fongmi.android.tv.ui.dialog.BackupDialog;
 import com.fongmi.android.tv.ui.dialog.ConfigDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
@@ -67,7 +69,7 @@ import java.util.function.Consumer;
 
 import static com.github.catvod.utils.Github.URL;
 
-public class SettingFragment extends BaseFragment implements ConfigCallback, SiteCallback, LiveCallback, ProxyCallback {
+public class SettingFragment extends BaseFragment implements BackupCallback, ConfigCallback, SiteCallback, LiveCallback, ProxyCallback {
 
     private FragmentSettingBinding mBinding;
     private String[] backup;
@@ -123,11 +125,12 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
             Set<String> linkedHashSet = new LinkedHashSet<>();
             linkedHashSet.add("http://tvbox.王二小放牛娃.xyz");
             linkedHashSet.add("https://raw.kkgithub.com/liu673cn/box/main/m.json");
+            linkedHashSet.add("https://gh.con.sh/https://raw.githubusercontent.com/jadehh/TVSpider/js/tv_config.json");
             linkedHashSet.add("http://肥猫.com/");
             linkedHashSet.add("http://like.肥猫.com/你好");
-//            linkedHashSet.add("https://www.mpanso.com/小米/DEMO.json");
+            linkedHashSet.add("https://raw.kkgithub.com/jeraypop/yuan/main/m.json");
+//            linkedHashSet.add("http://ok321.top/tv");
             linkedHashSet.add("https://www.饭太硬.com/tv/");
-            linkedHashSet.add("http://ok321.top/tv");
             List<String> list = new ArrayList<>(linkedHashSet); // 转换为ArrayList以便按索引访问
             String ori =VodConfig.get().getConfig().getUrl();
             int type = 0;
@@ -139,7 +142,11 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
                         // 这里写你需要延时执行的代码
                         String url =  list.get(finalI);
                         if (url.contains("liu673cn")) {
-                            Config.find(ori, type).url(url).name("刘").update();
+                            Config.find(ori, type).url(url).name("liu673").update();
+                        }else if (url.contains("jadehh")) {
+                            Config.find(ori, type).url(url).name("新视觉").update();
+                        }else if (url.contains("jeraypop")) {
+                            Config.find(ori, type).url(url).name("秒启动").update();
                         }else if (url.contains("王二小")) {
                             Config.find(ori, type).url(url).name("王二小").update();
                         } else if (url.contains("肥猫")) {
@@ -152,7 +159,7 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
                         }else if (url.contains("饭太硬")) {
                             Config.find(ori, type).url(url).name("饭太硬").update();
                         }else if (url.contains("ok321")) {
-                            Config.find(ori, type).url(url).name("ok").update();
+                            Config.find(ori, type).url(url).name("ok[码:3545]").update();
                         } else {
                             Config.find(ori, type).url(url).name("").update();
                         }
@@ -372,7 +379,7 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
     }
 
     private void setDoh(Doh doh) {
-        ExoUtil.reset();
+
         Source.get().stop();
         OkHttp.get().setDoh(doh);
         Notify.progress(getActivity());
@@ -387,7 +394,7 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
 
     @Override
     public void setProxy(String proxy) {
-        ExoUtil.reset();
+
         Source.get().stop();
         Setting.putProxy(proxy);
         OkHttp.get().setProxy(proxy);
@@ -419,14 +426,14 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
     }
 
     private void onRestore(View view) {
-        FileChooser.from(this).type(FileChooser.TYPE_RESTORE).show(FileChooser.getUri("TV"));
+        PermissionX.init(this).permissions(Manifest.permission.WRITE_EXTERNAL_STORAGE).request((allGranted, grantedList, deniedList) -> {
+            if (allGranted) BackupDialog.create(this).show();
+        });
     }
 
     private void onTransmit(View view) {
         PermissionX.init(this).permissions(Manifest.permission.WRITE_EXTERNAL_STORAGE).request((allGranted, grantedList, deniedList) -> {
-            if (allGranted) {
-                TransmitActionDialog.create(this).show();
-            }
+            if (allGranted) TransmitActionDialog.create(this).show();
         });
     }
 
@@ -443,7 +450,8 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
         VodConfig.get().init().load(getCallback());
     }
 
-    private void restore(File file) {
+    @Override
+    public void restore(File file) {
         PermissionX.init(this).permissions(Manifest.permission.WRITE_EXTERNAL_STORAGE).request((allGranted, grantedList, deniedList) -> AppDatabase.restore(file, new Callback() {
             @Override
             public void success() {
@@ -487,7 +495,6 @@ public class SettingFragment extends BaseFragment implements ConfigCallback, Sit
         if (resultCode != Activity.RESULT_OK || requestCode != FileChooser.REQUEST_PICK_FILE) return;
         String path = FileChooser.getPathFromUri(getContext(), data.getData());
         if (FileChooser.type() == FileChooser.TYPE_APK) TransmitDialog.create().apk(path).show(getActivity());
-        else if (FileChooser.type() == FileChooser.TYPE_RESTORE) restore(new File(path));
         else if (FileChooser.type() == FileChooser.TYPE_PUSH_WALLPAPER) TransmitDialog.create().wallConfig(path).show(getActivity());
         else setConfig(Config.find("file:/" + path.replace(Path.rootPath(), ""), type));
     }

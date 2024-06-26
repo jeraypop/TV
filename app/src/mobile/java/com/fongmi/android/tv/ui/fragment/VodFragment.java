@@ -130,11 +130,12 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
             Set<String> linkedHashSet = new LinkedHashSet<>();
             linkedHashSet.add("http://tvbox.王二小放牛娃.xyz");
             linkedHashSet.add("https://raw.kkgithub.com/liu673cn/box/main/m.json");
+            linkedHashSet.add("https://gh.con.sh/https://raw.githubusercontent.com/jadehh/TVSpider/js/tv_config.json");
             linkedHashSet.add("http://肥猫.com/");
             linkedHashSet.add("http://like.肥猫.com/你好");
-            //linkedHashSet.add("https://www.mpanso.com/小米/DEMO.json");
+            linkedHashSet.add("https://raw.kkgithub.com/jeraypop/yuan/main/m.json");
+//            linkedHashSet.add("http://ok321.top/tv");
             linkedHashSet.add("https://www.饭太硬.com/tv/");
-            linkedHashSet.add("http://ok321.top/tv");
 
             //// 转换为ArrayList以便按索引访问
             List<String> list = new ArrayList<>(linkedHashSet);
@@ -148,8 +149,12 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
                         // 这里写你需要延时执行的代码
                         String url =  list.get(finalI);
                         if (url.contains("liu673cn")) {
-                            Config.find(ori, type).url(url).name("刘").update();
-                        } else if (url.contains("王二小")) {
+                            Config.find(ori, type).url(url).name("liu673").update();
+                        } else if (url.contains("jadehh")) {
+                            Config.find(ori, type).url(url).name("新视觉").update();
+                        }else if (url.contains("jeraypop")) {
+                            Config.find(ori, type).url(url).name("秒启动").update();
+                        }else if (url.contains("王二小")) {
                             Config.find(ori, type).url(url).name("王二小").update();
                         } else if (url.contains("肥猫")) {
                             if (url.contains("你好")) {
@@ -160,7 +165,7 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
                         }else if (url.contains("饭太硬")) {
                             Config.find(ori, type).url(url).name("饭太硬").update();
                         }else if (url.contains("ok321")) {
-                            Config.find(ori, type).url(url).name("ok").update();
+                            Config.find(ori, type).url(url).name("okok[码:3545]").update();
                         }else {
                             Config.find(ori, type).url(url).name("").update();
                         }

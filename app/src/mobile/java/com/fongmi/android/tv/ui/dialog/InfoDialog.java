@@ -65,6 +65,12 @@ public class InfoDialog {
     }
 
     private void initView() {
+        //新增   不是 http 开头的不显示
+        if (fixUrl().toLowerCase().startsWith("http")) {
+            binding.downtips.setVisibility(View.VISIBLE);
+        } else {
+            binding.downtips.setVisibility(View.GONE);
+        }
         binding.title.setText(title);
         binding.url.setText(fixUrl());
         binding.header.setText(header);
@@ -73,12 +79,21 @@ public class InfoDialog {
     }
 
     private void initEvent() {
-        binding.url.setOnClickListener(this::onShare);
+        //新增   不是 http 开头的不分享
+        if (fixUrl().toLowerCase().startsWith("http")) {
+            binding.url.setOnClickListener(this::onShare);
+        }
+
         binding.url.setOnLongClickListener(v -> onCopy(url));
         binding.header.setOnLongClickListener(v -> onCopy(header));
     }
     private String fixUrl() {
-        return TextUtils.isEmpty(url) ? "" : url.startsWith("data") ? url.substring(0, Math.min(url.length(), 128)).concat("...") : url;
+        if (false) {
+            return TextUtils.isEmpty(url) ? "" : url.startsWith("data") ? url.substring(0, Math.min(url.length(), 128)).concat("...") : url;
+        } else {
+            return TextUtils.isEmpty(url) ? "" : url.startsWith("data") ? " 未获取到下载地址": url;
+        }
+
     }
 
     private void onShare(View view) {

@@ -40,6 +40,13 @@ public class Device {
         device.setType(Product.getDeviceType());
         return device;
     }
+    public static Device get(org.fourthline.cling.model.meta.Device<?, ?, ?> item) {
+        Device device = new Device();
+        device.setUuid(item.getIdentity().getUdn().getIdentifierString());
+        device.setName(item.getDetails().getFriendlyName());
+        device.setType(2);
+        return device;
+    }
 
     public static Device objectFrom(String str) {
         return App.gson().fromJson(str, Device.class);
