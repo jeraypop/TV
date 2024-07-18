@@ -94,7 +94,7 @@ public class Path {
     }
 
     public static File jpa() {
-        return mkdir(new File(cache() + File.separator + "jpa"));
+        return mkdir(new File(thunderCache() + File.separator + "jpa"));
     }
 
     public static File thunder() {
@@ -128,6 +128,10 @@ public class Path {
 
     public static File js(String name) {
         return new File(js(), name);
+    }
+
+    public static File py(String name) {
+        return new File(py(), name);
     }
 
     public static File jar(String name) {

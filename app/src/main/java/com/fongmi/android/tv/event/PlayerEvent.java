@@ -12,9 +12,7 @@ public class PlayerEvent {
     }
 
 
-    public static void ready() {
-        EventBus.getDefault().post(new PlayerEvent(Player.STATE_READY));
-    }
+
 
     public static void state(int state) {
         EventBus.getDefault().post(new PlayerEvent(state));

@@ -161,7 +161,6 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
         getIjk().getSubtitleView().setApplyEmbeddedStyles(!Setting.isCaption());
     }
 
-
     private void setPlayerView() {
         getIjk().setPlayer(mPlayers.getPlayer());
         mBinding.control.speed.setText(mPlayers.getSpeedText());
@@ -214,6 +213,7 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
         setPlayerView();
         onReset();
     }
+
     private void onDecode() {
         onDecode(true);
     }
@@ -364,7 +364,7 @@ public class CastActivity extends BaseActivity implements CustomKeyDownCast.List
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onErrorEvent(ErrorEvent event) {
-        if (event.getCode() / 1000 == 4 && mPlayers.isExo() && mPlayers.isHard()) onDecode(false);
+        if (event.getCode() / 1000 == 4 && mPlayers.isExo() && mPlayers.addCount() <= 1) onDecode(false);
         else if (mPlayers.addRetry() > event.getRetry()) onError(event);
         else onReset();
     }

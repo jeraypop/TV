@@ -21,6 +21,7 @@ import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.CastVideo;
+import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Device;
 import com.fongmi.android.tv.bean.History;
 
@@ -70,18 +71,20 @@ public class CastDialog extends BaseDialog implements DeviceAdapter.OnClickListe
     }
 
     public CastDialog() {
-        client = OkHttp.client(Constant.TIMEOUT_SYNC);
+
         body = new FormBody.Builder();
         body.add("device", Device.get().toString());
         if (VodConfig.getUrl() != null) body.add("url", VodConfig.getUrl());
+        body.add("config", Config.vod().toString());
+        client = OkHttp.client(Constant.TIMEOUT_SYNC);
     }
 
     public CastDialog history(History history) {
         String id = history.getVodId();
         String fd = history.getVodId();
         if (fd.startsWith("/")) fd = Server.get().getAddress() + "/file" + fd.replace(Path.rootPath(), "");
-        if (fd.startsWith("file")) fd = Server.get().getAddress() + "/" + fd.replace(Path.rootPath(), "");
-        if (fd.startsWith("http://127.0.0.1:7777")) fd = Uri.parse(fd).getQueryParameter("url");
+        if (fd.startsWith("file")) fd = Server.get().getAddress() + "/" + fd.replace(Path.rootPath(), "").replace("://", "");
+
         if (fd.contains("127.0.0.1")) fd = fd.replace("127.0.0.1", Util.getIp());
         body.add("history", history.toString().replace(id, fd));
         return this;
@@ -139,15 +142,18 @@ public class CastDialog extends BaseDialog implements DeviceAdapter.OnClickListe
         DLNACastManager.INSTANCE.registerDeviceListener(this);
     }
 
+    private void onScan() {
+        ScanActivity.start(getActivity());
+    }
+
+
     private void onRefresh() {
         if (fm) ScanTask.create(this).start(adapter.getIps());
         DLNACastManager.INSTANCE.search(null);
         adapter.clear();
     }
 
-    private void onScan() {
-        ScanActivity.start(getActivity());
-    }
+
 
     private void onCasted() {
         listener.onCasted();

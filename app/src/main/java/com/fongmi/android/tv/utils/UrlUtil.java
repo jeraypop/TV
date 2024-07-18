@@ -6,6 +6,9 @@ import android.text.TextUtils;
 import com.fongmi.android.tv.server.Server;
 import com.google.common.net.HttpHeaders;
 
+//import androidx.media3.common.util.UriUtil;
+import com.github.catvod.utils.UriUtil;
+
 public class UrlUtil {
 
     public static Uri uri(String url) {
@@ -35,6 +38,11 @@ public class UrlUtil {
         return path == null ? "" : path.trim();
     }
 
+    public static String resolve(String baseUri, String referenceUri) {
+        return UriUtil.resolve(baseUri, referenceUri);
+    }
+
+
     public static String convert(String url) {
         String scheme = scheme(url);
         if ("clan".equals(scheme)) return convert(fixUrl(url));
@@ -61,6 +69,7 @@ public class UrlUtil {
     public static String fixDownloadUrl(String url) {
         if (TextUtils.isEmpty(url)) return "";
         Uri uri = UrlUtil.uri(url);
+        if (!uri.toString().startsWith("http://127.0.0.1:")) return uri.toString();
         String download = uri.getQueryParameter("url");
         return TextUtils.isEmpty(download) ? uri.toString() : download;
     }

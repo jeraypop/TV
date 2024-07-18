@@ -111,7 +111,7 @@ public class SiteViewModel extends ViewModel {
             } else {
                 ArrayMap<String, String> params = new ArrayMap<>();
                 if (site.getType() == 1 && !extend.isEmpty()) params.put("f", App.gson().toJson(extend));
-                else if (site.getType() == 4) params.put("ext", Util.base64(App.gson().toJson(extend)));
+                if (site.getType() == 4) params.put("ext", Util.base64(App.gson().toJson(extend), Util.URL_SAFE));
                 params.put("ac", site.getType() == 0 ? "videolist" : "detail");
                 params.put("t", tid);
                 params.put("pg", page);
@@ -132,15 +132,15 @@ public class SiteViewModel extends ViewModel {
                 VodConfig.get().setRecent(site);
                 Result result = Result.fromJson(detailContent);
                 if (!result.getList().isEmpty()) result.getList().get(0).setVodFlags();
-                if (!result.getList().isEmpty()) checkThunder(result.getList().get(0).getVodFlags());
+                if (!result.getList().isEmpty()) Source.get().parse(result.getList().get(0).getVodFlags());
                 return result;
             } else if (site.isEmpty() && "push_agent".equals(key)) {
                 Vod vod = new Vod();
                 vod.setVodId(id);
                 vod.setVodName(id);
-                vod.setVodPic("https://pic.rmb.bdstatic.com/bjh/1d0b02d0f57f0a42201f92caba5107ed.jpeg");
+                vod.setVodPic(ResUtil.getString(R.string.push_image));
                 vod.setVodFlags(Flag.create(ResUtil.getString(R.string.push), ResUtil.getString(R.string.play), id));
-                checkThunder(vod.getVodFlags());
+                Source.get().parse(vod.getVodFlags());
                 return Result.vod(vod);
             } else {
                 ArrayMap<String, String> params = new ArrayMap<>();
@@ -150,13 +150,13 @@ public class SiteViewModel extends ViewModel {
                 SpiderDebug.log(detailContent);
                 Result result = Result.fromType(site.getType(), detailContent);
                 if (!result.getList().isEmpty()) result.getList().get(0).setVodFlags();
-                if (!result.getList().isEmpty()) checkThunder(result.getList().get(0).getVodFlags());
+                if (!result.getList().isEmpty()) Source.get().parse(result.getList().get(0).getVodFlags());
                 return result;
             }
         });
     }
 
-    public void executePlayer(MutableLiveData<Result> data, String key, String flag, String id) {
+    private  void executePlayer(MutableLiveData<Result> data, String key, String flag, String id) {
         execute(data, () -> {
             Source.get().stop();
             Site site = VodConfig.get().getSite(key);
@@ -198,6 +198,7 @@ public class SiteViewModel extends ViewModel {
                 result.setFlag(flag);
                 result.setHeader(site.getHeader());
                 result.setPlayUrl(site.getPlayUrl());
+                result.setUrl(Source.get().fetch(result));
                 result.setParse(Sniffer.isVideoFormat(url.v()) && result.getPlayUrl().isEmpty() ? 0 : 1);
                 SpiderDebug.log(result.toString());
                 return result;
@@ -275,6 +276,7 @@ public class SiteViewModel extends ViewModel {
         ArrayList<String> ids = new ArrayList<>();
         if (site.getCategories().isEmpty()) for (Vod item : result.getList()) ids.add(item.getVodId());
         else for (Vod item : result.getList()) if (site.getCategories().contains(item.getTypeName())) ids.add(item.getVodId());
+        if (ids.isEmpty()) return result.clear();
         ArrayMap<String, String> params = new ArrayMap<>();
         params.put("ac", site.getType() == 0 ? "videolist" : "detail");
         params.put("ids", TextUtils.join(",", ids));
@@ -282,29 +284,6 @@ public class SiteViewModel extends ViewModel {
         result.setList(Result.fromType(site.getType(), response).getList());
         return result;
     }
-
-    private void checkThunder(List<Flag> flags) throws Exception {
-        for (Flag flag : flags) {
-            ExecutorService executor = Executors.newFixedThreadPool(Constant.THREAD_POOL * 2);
-            for (Future<List<Episode>> future : executor.invokeAll(getThunder(flag), 30, TimeUnit.SECONDS)) flag.getEpisodes().addAll(future.get());
-            executor.shutdownNow();
-        }
-    }
-
-    private List<Thunder.Parser> getThunder(Flag flag) {
-        List<Thunder.Parser> items = new ArrayList<>();
-        Iterator<Episode> iterator = flag.getEpisodes().iterator();
-        while (iterator.hasNext()) addThunder(iterator, items);
-        return items;
-    }
-
-    private void addThunder(Iterator<Episode> iterator, List<Thunder.Parser> items) {
-        String url = iterator.next().getUrl();
-        if (!Sniffer.isThunder(url)) return;
-        items.add(Thunder.Parser.get(url));
-        iterator.remove();
-    }
-
     private void post(Site site, Result result) {
         if (result.getList().isEmpty()) return;
         for (Vod vod : result.getList()) vod.setSite(site);

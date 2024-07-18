@@ -92,6 +92,7 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
     private Runnable mR4;
     private Clock mClock;
     private int toggleCount;
+    private int errorCount;
     private int count;
 
     public static void start(Context context) {
@@ -217,6 +218,7 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
         findViewById(R.id.timeBar).setNextFocusUpId(R.id.player);
         mBinding.control.home.setVisibility(LiveConfig.isOnly() ? View.GONE : View.VISIBLE);
     }
+
     private void setSubtitleView() {
         setSubtitle(Setting.getSubtitle());
         getExo().getSubtitleView().setStyle(ExoUtil.getCaptionStyle());
@@ -283,7 +285,6 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
 
     private void setGroup(Live live) {
         List<Group> items = new ArrayList<>();
-
         for (Group group : live.getGroups()) (group.isHidden() ? mHides : items).add(group);
         mGroupAdapter.setItems(items, null);
         setPosition(LiveConfig.get().find(items));
@@ -426,6 +427,7 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
     private void onDecode() {
         onDecode(true);
     }
+
     private void onDecode(boolean save) {
         mPlayers.toggleDecode(save);
         mPlayers.set(getExo(), getIjk());
@@ -571,7 +573,6 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
             public void onLoadFailed(@Nullable Drawable error) {
                 getExo().setDefaultArtwork(error);
                 getIjk().setDefaultArtwork(error);
-
             }
 
             @Override
@@ -675,7 +676,6 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
         if (mChannel != null && success) mViewModel.getEpg(mChannel);
     }
 
-
     private void setEpg(Epg epg) {
         if (mChannel != null && mChannel.getTvgName().equals(epg.getKey())) setEpg();
     }
@@ -768,6 +768,7 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
                 break;
             case Player.STATE_READY:
                 resetToggle();
+                resetError();
                 setMetadata();
                 hideProgress();
                 mPlayers.reset();
@@ -780,8 +781,6 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
                 break;
         }
     }
-
-
 
     private void setTrackVisible(boolean visible) {
         mBinding.control.text.setVisibility(visible && mPlayers.haveTrack(C.TRACK_TYPE_TEXT) ? View.VISIBLE : View.GONE);
@@ -798,7 +797,8 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onErrorEvent(ErrorEvent event) {
-        if (event.getCode() / 1000 == 4 && mPlayers.isExo() && mPlayers.isHard()) onDecode(false);
+        if (addErrorCount() > 20) onErrorEnd(event);
+        else if (event.getCode() / 1000 == 4 && mPlayers.isExo() && mPlayers.addCount() <= 1) onDecode(false);
         else if (mPlayers.addRetry() > event.getRetry()) checkError(event);
         else fetch();
     }
@@ -819,10 +819,19 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
         fetch();
     }
 
-    private void onError(ErrorEvent event) {
+    private void onErrorEnd(ErrorEvent event) {
+        onErrorPlayer(event);
+        resetError();
+    }
+
+    private void onErrorPlayer(ErrorEvent event) {
         showError(event.getMsg());
         mPlayers.reset();
         mPlayers.stop();
+    }
+
+    private void onError(ErrorEvent event) {
+        onErrorPlayer(event);
         startFlow();
     }
 
@@ -889,6 +898,14 @@ public class LiveActivity extends BaseActivity implements Clock.Callback, GroupP
 
     public void resetToggle() {
         this.toggleCount = 0;
+    }
+
+    public int addErrorCount() {
+        return ++errorCount;
+    }
+
+    public void resetError() {
+        this.errorCount = 0;
     }
 
     @Override

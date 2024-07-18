@@ -25,6 +25,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 
+import com.github.catvod.utils.UriUtil;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -121,31 +122,31 @@ public class Global {
     @Keep
     @JSMethod
     public String pd(String html, String rule, String urlKey) {
-        return parser.pdfh(html, rule, urlKey);
+        return parser.parseDomForUrl(html, rule, urlKey);
     }
 
     @Keep
     @JSMethod
     public String pdfh(String html, String rule) {
-        return parser.pdfh(html, rule, "");
+        return parser.parseDomForUrl(html, rule, "");
     }
 
     @Keep
     @JSMethod
     public JSArray pdfa(String html, String rule) {
-        return JSUtil.toArray(ctx, parser.pdfa(html, rule));
+        return JSUtil.toArray(ctx, parser.parseDomForArray(html, rule));
     }
 
     @Keep
     @JSMethod
     public JSArray pdfl(String html, String rule, String texts, String urls, String urlKey) {
-        return JSUtil.toArray(ctx, parser.pdfl(html, rule, texts, urls, urlKey));
+        return JSUtil.toArray(ctx, parser.parseDomForList(html, rule, texts, urls, urlKey));
     }
 
     @Keep
     @JSMethod
     public String joinUrl(String parent, String child) {
-        return parser.joinUrl(parent, child);
+        return UriUtil.resolve(parent, child);
     }
 
     @Keep

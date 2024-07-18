@@ -58,6 +58,10 @@ public class Flag implements Parcelable {
     public String getFlag() {
         return TextUtils.isEmpty(flag) ? "" : flag;
     }
+    public void setFlag(String flag) {
+        this.flag = flag;
+    }
+
 
     public String getUrls() {
         return urls;

@@ -244,7 +244,13 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
         binding.speed.setEnabled(player.canAdjustSpeed());
         binding.speed.setValue(Math.max(((int) (player.getSpeed()/0.25f) * 0.25f), 0.5f));
         binding.player.setText(parent.control.action.player.getText());
-        binding.decode.setVisibility(parent.control.action.decode.getVisibility());
+        if (true) {
+            //控制对话框里的按钮一直显示就好
+            binding.decode.setVisibility(View.VISIBLE);
+        } else {
+            binding.decode.setVisibility(parent.control.action.decode.getVisibility());
+        }
+
     }
 
     public void setParseVisible(boolean visible) {
@@ -253,11 +259,21 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
     }
 
     public void setTrackVisible() {
-        binding.text.setVisibility(parent.control.action.text.getVisibility());
-        binding.audio.setVisibility(parent.control.action.audio.getVisibility());
-        binding.video.setVisibility(parent.control.action.video.getVisibility());
-        binding.track.setVisibility(binding.text.getVisibility() == View.GONE && binding.audio.getVisibility() == View.GONE && binding.video.getVisibility() == View.GONE ? View.GONE : View.VISIBLE);
+        //控制对话框里的按钮一直显示就好
+        if (true) {
+            binding.text.setVisibility(View.VISIBLE);
+            binding.audio.setVisibility(View.VISIBLE);
+            binding.video.setVisibility(View.VISIBLE);
+            binding.track.setVisibility(binding.text.getVisibility() == View.GONE && binding.audio.getVisibility() == View.GONE && binding.video.getVisibility() == View.GONE ? View.GONE : View.VISIBLE);
+        } else {
+            binding.text.setVisibility(parent.control.action.text.getVisibility());
+            binding.audio.setVisibility(parent.control.action.audio.getVisibility());
+            binding.video.setVisibility(parent.control.action.video.getVisibility());
+            binding.track.setVisibility(binding.text.getVisibility() == View.GONE && binding.audio.getVisibility() == View.GONE && binding.video.getVisibility() == View.GONE ? View.GONE : View.VISIBLE);
+        }
+
     }
+
 
     @Override
     public void onItemClick(Parse item) {
