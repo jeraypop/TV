@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
+
+import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.utils.Notify;
 import com.tencent.smtt.export.external.interfaces.SslError;
 import com.tencent.smtt.export.external.interfaces.SslErrorHandler;
@@ -201,7 +203,9 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
 
     private boolean isAd(String host) {
         for (String ad : VodConfig.get().getAds()) if (host.contains(ad)) return true;
+        for (String ad : LiveConfig.get().getAds()) if (host.contains(ad)) return true;
         for (String ad : VodConfig.get().getAds()) if (Pattern.compile(ad).matcher(host).find()) return true;
+        for (String ad : LiveConfig.get().getAds()) if (Pattern.compile(ad).matcher(host).find()) return true;
         return false;
     }
 

@@ -64,6 +64,10 @@ public class ErrorEvent {
         return code;
     }
 
+    public boolean isDecode() {
+        return code / 1000 == 4;
+    }
+
 
     public String getMsg() {
         if (type == Type.URL) return ResUtil.getString(R.string.error_play_url, code);

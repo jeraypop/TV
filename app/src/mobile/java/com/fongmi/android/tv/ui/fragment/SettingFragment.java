@@ -397,6 +397,7 @@ public class SettingFragment extends BaseFragment implements BackupCallback, Con
 
         Source.get().stop();
         Setting.putProxy(proxy);
+        OkHttp.selector().clear();
         OkHttp.get().setProxy(proxy);
         Notify.progress(getActivity());
         VodConfig.load(Config.vod(), getCallback());
