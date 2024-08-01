@@ -2,6 +2,7 @@
 .gradle
 *.jks
 *.aar
+lib-*.aar
 *build
 /media*
 /Release

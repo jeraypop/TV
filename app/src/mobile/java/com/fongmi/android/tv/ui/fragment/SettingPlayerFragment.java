@@ -59,6 +59,7 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.captionText.setText(getSwitch(Setting.isCaption()));
         mBinding.bufferText.setText(String.valueOf(Setting.getBuffer()));
         mBinding.subtitleText.setText(String.valueOf(Setting.getSubtitle()));
+        mBinding.playWithOthersText.setText(getSwitch(Setting.isPlayWithOthers()));
         mBinding.danmuLoadText.setText(getSwitch(Setting.isDanmuLoad()));
         mBinding.rtspText.setText((rtsp = ResUtil.getStringArray(R.array.select_rtsp))[Setting.getRtsp()]);
         mBinding.flagText.setText((flag = ResUtil.getStringArray(R.array.select_flag))[Setting.getFlag()]);
@@ -84,6 +85,7 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.render.setOnClickListener(this::setRender);
         mBinding.tunnel.setOnClickListener(this::setTunnel);
         mBinding.caption.setOnClickListener(this::setCaption);
+        mBinding.playWithOthers.setOnClickListener(this::setPlayWithOthers);
         mBinding.subtitle.setOnClickListener(this::onSubtitle);
         mBinding.caption.setOnLongClickListener(this::onCaption);
         mBinding.danmuLoad.setOnClickListener(this::setDanmuLoad);
@@ -95,6 +97,7 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.http.setVisibility(Players.isExo(Setting.getPlayer()) ? View.VISIBLE : View.GONE);
         mBinding.buffer.setVisibility(Players.isExo(Setting.getPlayer()) ? View.VISIBLE : View.GONE);
         mBinding.tunnel.setVisibility(Players.isExo(Setting.getPlayer()) ? View.VISIBLE : View.GONE);
+        mBinding.playWithOthers.setVisibility(Players.isExo(Setting.getPlayer()) ? View.VISIBLE : View.GONE);
     }
 
     private void onUa(View view) {
@@ -189,6 +192,12 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
     public void setSubtitle(int size) {
         mBinding.subtitleText.setText(String.valueOf(size));
     }
+
+    private void setPlayWithOthers(View view) {
+        Setting.putPlayWithOthers(!Setting.isPlayWithOthers());
+        mBinding.playWithOthersText.setText(getSwitch(Setting.isPlayWithOthers()));
+    }
+
 
     private void setDanmuLoad(View view) {
         Setting.putDanmuLoad(!Setting.isDanmuLoad());

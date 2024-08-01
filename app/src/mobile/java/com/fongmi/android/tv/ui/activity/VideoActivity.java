@@ -188,6 +188,11 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         start(activity, key, id, name, pic, null, true);
     }
 
+    public static void download(Activity activity, String id, String name, String pic) {
+        start(activity, "push_agent", id, name, pic, null, false, true);
+    }
+
+
     public static void start(Activity activity, String url) {
         start(activity, "push_agent", url, url, null);
     }
@@ -201,7 +206,14 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     public static void start(Activity activity, String key, String id, String name, String pic, String mark, boolean collect) {
+        start(activity, key, id, name, pic, mark, collect, false);
+    }
+
+    public static void start(Activity activity, String key, String id, String name, String pic, String mark, boolean collect, boolean download) {
+
+
         Intent intent = new Intent(activity, VideoActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra("download", download);
         intent.putExtra("collect", collect);
         intent.putExtra("mark", mark);
         intent.putExtra("name", name);
@@ -270,6 +282,11 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     private boolean isFromCollect() {
         return getIntent().getBooleanExtra("collect", false);
     }
+
+    private boolean isFromDownload() {
+        return getIntent().getBooleanExtra("download", false);
+    }
+
 
     private boolean isAutoRotate() {
         return Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 0) == 1;
@@ -432,7 +449,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void setVideoView() {
-        mPlayers.set(getExo(), getIjk());
+        mPlayers.init(getExo(), getIjk());
         if (isPort() && ResUtil.isLand(this))
             enterFullscreen();
 
@@ -563,6 +580,8 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
 
     private void setDetail(Vod item) {
         mBinding.progressLayout.showContent();
+        if (isFromDownload()) item.setVodName("");
+        if (isFromDownload()) item.setVodPic("");
         mBinding.video.setTag(item.getVodPic(getPic()));
         Downloader.get().image(item.getVodPic());
         mBinding.name.setText(item.getVodName(getName()));
@@ -936,7 +955,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
     private void onDecode(boolean save) {
         mPlayers.toggleDecode(save);
-        mPlayers.set(getExo(), getIjk());
+        mPlayers.init(getExo(), getIjk());
         setDecodeView();
         setR1Callback();
         onRefresh();

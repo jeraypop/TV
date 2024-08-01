@@ -22,7 +22,7 @@ public class Sniffer {
 
 
     public static String getUrl(String text) {
-        if (Json.valid(text)) return text;
+        if (Json.valid(text) || text.contains("$")) return text;
         Matcher m = AI_PUSH.matcher(text);
         if (m.find()) return m.group(0);
         return text;
