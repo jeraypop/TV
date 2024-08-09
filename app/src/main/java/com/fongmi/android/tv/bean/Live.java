@@ -11,10 +11,14 @@ import androidx.room.PrimaryKey;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.api.loader.BaseLoader;
 import com.fongmi.android.tv.db.AppDatabase;
+import com.fongmi.android.tv.gson.ExtAdapter;
+import com.github.catvod.crawler.Spider;
 import com.github.catvod.utils.Json;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonElement;
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
@@ -34,20 +38,25 @@ public class Live {
     private String name;
 
     @Ignore
-    @SerializedName("type")
-    private int type;
-
-    @Ignore
-    @SerializedName("group")
-    private String group;
-
-    @Ignore
     @SerializedName("url")
     private String url;
 
     @Ignore
+    @SerializedName("api")
+    private String api;
+
+    @Ignore
+    @JsonAdapter(ExtAdapter.class)
+    @SerializedName("ext")
+    private String ext;
+
+    @Ignore
     @SerializedName("jar")
     private String jar;
+
+    @Ignore
+    @SerializedName("click")
+    private String click;
 
     @Ignore
     @SerializedName("logo")
@@ -62,16 +71,16 @@ public class Live {
     private String ua;
 
     @Ignore
-    @SerializedName("click")
-    private String click;
-
-    @Ignore
     @SerializedName("origin")
     private String origin;
 
     @Ignore
     @SerializedName("referer")
     private String referer;
+
+    @Ignore
+    @SerializedName("type")
+    private Integer type;
 
     @Ignore
     @SerializedName("timeout")
@@ -86,20 +95,16 @@ public class Live {
     private Integer playerType;
 
     @Ignore
-    @SerializedName("channels")
-    private List<Channel> channels;
-
-    @Ignore
-    @SerializedName("groups")
-    private List<Group> groups;
-
-    @Ignore
     @SerializedName("catchup")
     private Catchup catchup;
 
     @Ignore
     @SerializedName("core")
     private Core core;
+
+    @Ignore
+    @SerializedName("groups")
+    private List<Group> groups;
 
     @SerializedName("boot")
     private boolean boot;
@@ -123,6 +128,12 @@ public class Live {
         return items == null ? Collections.emptyList() : items;
     }
 
+    public static Live get(String name) {
+        Live live = new Live();
+        live.setName(name);
+        return live;
+    }
+
     public Live() {
     }
 
@@ -136,8 +147,96 @@ public class Live {
         this.url = url;
     }
 
-    public int getType() {
-        return type;
+    public String getName() {
+        return TextUtils.isEmpty(name) ? "" : name;
+    }
+
+    public void setName(@NonNull String name) {
+        this.name = name;
+    }
+
+    public String getUrl() {
+        return TextUtils.isEmpty(url) ? "" : url;
+    }
+
+    public String getApi() {
+        return TextUtils.isEmpty(api) ? "" : api;
+    }
+
+    public void setApi(String api) {
+        this.api = api;
+    }
+
+    public String getExt() {
+        return TextUtils.isEmpty(ext) ? "" : ext;
+    }
+
+    public void setExt(String ext) {
+        this.ext = ext.trim();
+    }
+
+    public String getJar() {
+        return TextUtils.isEmpty(jar) ? "" : jar;
+    }
+
+    public void setJar(String jar) {
+        this.jar = jar;
+    }
+
+    public String getClick() {
+        return TextUtils.isEmpty(click) ? "" : click;
+    }
+
+    public String getLogo() {
+        return TextUtils.isEmpty(logo) ? "" : logo;
+    }
+
+    public String getEpg() {
+        return TextUtils.isEmpty(epg) ? "" : epg;
+    }
+
+    public void setEpg(String epg) {
+        this.epg = epg;
+    }
+
+    public String getUa() {
+        return TextUtils.isEmpty(ua) ? "" : ua;
+    }
+
+    public String getOrigin() {
+        return TextUtils.isEmpty(origin) ? "" : origin;
+    }
+
+    public String getReferer() {
+        return TextUtils.isEmpty(referer) ? "" : referer;
+    }
+
+    public Integer getType() {
+        return type == null ? 0 : type;
+    }
+
+    public Integer getTimeout() {
+        return timeout == null ? Constant.TIMEOUT_PLAY : Math.max(timeout, 1) * 1000;
+    }
+
+    public JsonElement getHeader() {
+        return header;
+    }
+
+    public int getPlayerType() {
+        return playerType == null ? -1 : Math.min(playerType, 2);
+    }
+
+    public Catchup getCatchup() {
+        return catchup == null ? new Catchup() : catchup;
+    }
+
+    public Core getCore() {
+        return core == null ? new Core() : core;
+    }
+
+    public List<Group> getGroups() {
+        return groups = groups == null ? new ArrayList<>() : groups;
     }
 
     public boolean isBoot() {
@@ -154,82 +253,6 @@ public class Live {
 
     public void setPass(boolean pass) {
         this.pass = pass;
-    }
-
-    public String getName() {
-        return TextUtils.isEmpty(name) ? "" : name;
-    }
-
-    public void setName(@NonNull String name) {
-        this.name = name;
-    }
-
-    public String getGroup() {
-        return TextUtils.isEmpty(group) ? "" : group;
-    }
-
-    public String getUrl() {
-        return TextUtils.isEmpty(url) ? "" : url;
-    }
-
-    public String getJar() {
-        return TextUtils.isEmpty(jar) ? "" : jar;
-    }
-
-    public String getLogo() {
-        return TextUtils.isEmpty(logo) ? "" : logo;
-    }
-
-    public String getEpg() {
-        return TextUtils.isEmpty(epg) ? "" : epg;
-    }
-    public void setEpg(String epg) {
-        this.epg = epg;
-    }
-
-
-    public String getUa() {
-        return TextUtils.isEmpty(ua) ? "" : ua;
-    }
-
-    public String getOrigin() {
-        return TextUtils.isEmpty(origin) ? "" : origin;
-    }
-
-    public String getReferer() {
-        return TextUtils.isEmpty(referer) ? "" : referer;
-    }
-
-    public String getClick() {
-        return TextUtils.isEmpty(click) ? "" : click;
-    }
-
-    public Integer getTimeout() {
-        return timeout == null ? Constant.TIMEOUT_PLAY : Math.max(timeout, 1) * 1000;
-    }
-
-    public JsonElement getHeader() {
-        return header;
-    }
-
-    public int getPlayerType() {
-        return playerType == null ? -1 : Math.min(playerType, 2);
-    }
-
-    public List<Channel> getChannels() {
-        return channels = channels == null ? new ArrayList<>() : channels;
-    }
-
-    public List<Group> getGroups() {
-        return groups = groups == null ? new ArrayList<>() : groups;
-    }
-
-    public Catchup getCatchup() {
-        return catchup == null ? new Catchup() : catchup;
-    }
-
-    public Core getCore() {
-        return core == null ? new Core() : core;
     }
 
     public boolean isActivated() {
@@ -254,18 +277,6 @@ public class Live {
 
     public boolean isEmpty() {
         return getName().isEmpty();
-    }
-
-    public Live check() {
-        boolean proxy = getChannels().size() > 0 && getChannels().get(0).getUrls().size() > 0 && getChannels().get(0).getUrls().get(0).startsWith("proxy");
-        if (proxy) setProxy();
-        return this;
-    }
-
-    private void setProxy() {
-        this.url = getChannels().get(0).getUrls().get(0);
-        this.name = getChannels().get(0).getName();
-        this.type = 2;
     }
 
     public Group find(Group item) {
@@ -299,6 +310,15 @@ public class Live {
         setBoot(item.isBoot());
         setPass(item.isPass());
         return this;
+    }
+
+    public Live recent() {
+        BaseLoader.get().setRecent(getName(), getApi(), getJar());
+        return this;
+    }
+
+    public Spider spider() {
+        return BaseLoader.get().getSpider(getName(), getApi(), getExt(), getJar());
     }
 
     public Map<String, String> getHeaders() {

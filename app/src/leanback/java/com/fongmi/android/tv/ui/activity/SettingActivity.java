@@ -28,7 +28,6 @@ import com.fongmi.android.tv.impl.DohCallback;
 import com.fongmi.android.tv.impl.LiveCallback;
 import com.fongmi.android.tv.impl.ProxyCallback;
 import com.fongmi.android.tv.impl.SiteCallback;
-import com.fongmi.android.tv.player.exo.ExoUtil;
 import com.fongmi.android.tv.player.Source;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.dialog.BackupDialog;
@@ -37,7 +36,6 @@ import com.fongmi.android.tv.ui.dialog.DohDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
 import com.fongmi.android.tv.ui.dialog.ProxyDialog;
-
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
@@ -162,6 +160,11 @@ public class SettingActivity extends BaseActivity implements BackupCallback, Con
 
     private Callback getCallback() {
         return new Callback() {
+            @Override
+            public void success(String result) {
+                Notify.show(result);
+            }
+
             @Override
             public void success() {
                 setConfig();
@@ -350,7 +353,10 @@ public class SettingActivity extends BaseActivity implements BackupCallback, Con
             public void success() {
                 if (allGranted) {
                     Notify.progress(getActivity());
-                    App.post(() -> initConfig(), 3000);
+                    App.post(() -> {
+                        AppDatabase.reset();
+                        initConfig();
+                    }, 3000);
                 }
             }
         }));
