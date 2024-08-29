@@ -38,7 +38,6 @@ public class Source {
 
     public Source() {
         extractors = new ArrayList<>();
-
         extractors.add(new Force());
         extractors.add(new JianPian());
         extractors.add(new Proxy());
@@ -47,7 +46,6 @@ public class Source {
         extractors.add(new TVBus());
         extractors.add(new Video());
         extractors.add(new Youtube());
-
     }
 
     private Extractor getExtractor(String url) {
@@ -70,7 +68,7 @@ public class Source {
 
     public void parse(List<Flag> flags) throws Exception {
         for (Flag flag : flags) {
-            ExecutorService executor = Executors.newFixedThreadPool(Constant.THREAD_POOL * 2);
+            ExecutorService executor = Executors.newFixedThreadPool(Constant.THREAD_POOL);
             List<Callable<List<Episode>>> items = new ArrayList<>();
             Iterator<Episode> iterator = flag.getEpisodes().iterator();
             while (iterator.hasNext()) addCallable(iterator, items);
@@ -78,7 +76,6 @@ public class Source {
             executor.shutdownNow();
         }
     }
-
 
     public String fetch(Result result) throws Exception {
         String url = result.getUrl().v();

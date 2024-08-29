@@ -121,7 +121,6 @@ public class Path {
         return new File(files(), name);
     }
 
-
     public static File epg(String name) {
         return new File(epg(), name);
     }
@@ -200,10 +199,6 @@ public class Path {
             ignored.printStackTrace();
             return file;
         }
-    }
-
-    public static File utf8(File file) {
-        return write(cache(file.getName()), Util.utf8(readToByte(file)));
     }
 
     public static void move(File in, File out) {

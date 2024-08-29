@@ -6,9 +6,6 @@ import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.Decoder;
 import com.fongmi.android.tv.api.loader.BaseLoader;
-import com.fongmi.android.tv.api.loader.JarLoader;
-import com.fongmi.android.tv.api.loader.JsLoader;
-import com.fongmi.android.tv.api.loader.PyLoader;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Depot;
 import com.fongmi.android.tv.bean.Parse;
@@ -18,22 +15,14 @@ import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.bean.Doh;
-import com.github.catvod.crawler.Spider;
-import com.github.catvod.crawler.SpiderNull;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Json;
-import com.github.catvod.utils.Util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class VodConfig {
 
@@ -43,7 +32,6 @@ public class VodConfig {
     private List<Parse> parses;
     private List<String> flags;
     private List<String> ads;
-
     private boolean loadLive;
     private Config config;
     private Parse parse;
@@ -97,7 +85,6 @@ public class VodConfig {
         this.sites = new ArrayList<>();
         this.flags = new ArrayList<>();
         this.parses = new ArrayList<>();
-
         this.loadLive = false;
         return this;
     }
@@ -117,7 +104,6 @@ public class VodConfig {
         this.sites.clear();
         this.flags.clear();
         this.parses.clear();
-
         this.loadLive = true;
         BaseLoader.get().clear();
         return this;
@@ -176,6 +162,7 @@ public class VodConfig {
             initSite(object);
             initParse(object);
             initOther(object);
+            BaseLoader.get().parseJar(Json.safeString(object, "spider"));
             if (loadLive && object.has("lives")) initLive(object);
             String notice = Json.safeString(object, "notice");
             config.logo(Json.safeString(object, "logo"));
@@ -245,17 +232,10 @@ public class VodConfig {
         return ext;
     }
 
-
-
-
-
-
-
     private String parseJar(Site site, String spider) {
         if (site.getJar().isEmpty() && site.getApi().startsWith("csp_")) return spider;
         return site.getJar();
     }
-
 
     public List<Doh> getDoh() {
         List<Doh> items = Doh.get(App.get());
