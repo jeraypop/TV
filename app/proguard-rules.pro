@@ -92,3 +92,4 @@
 
 # Zxing
 -keep class com.google.zxing.** { *; }
+-keep class com.zh.pocket.** {*;}

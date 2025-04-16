@@ -2,7 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        jcenter()
+//        jcenter()
         google()
     }
 }
@@ -10,7 +10,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
-        jcenter()
+//        jcenter()
         google()
         flatDir { dirs "$rootDir/app/libs" }
         maven { url "https://jitpack.io" }
