@@ -137,7 +137,7 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
 
     @Override
     protected void initView(Bundle savedInstanceState) {
-        mKeyDown = CustomKeyDownLive.create(this, mBinding.video);
+        mKeyDown = CustomKeyDownLive.create(this, mBinding.exo);
         setPadding(mBinding.control.getRoot());
         setPadding(mBinding.recycler, true);
         mPlayers = Players.create(this);
@@ -213,6 +213,7 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
     }
 
     private void setScale(int scale) {
+        Setting.putLiveScale(scale);
         mBinding.exo.setResizeMode(scale);
         mBinding.control.action.scale.setText(ResUtil.getStringArray(R.array.select_scale)[scale]);
     }
@@ -358,8 +359,8 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
     private void onScale() {
         int index = Setting.getLiveScale();
         String[] array = ResUtil.getStringArray(R.array.select_scale);
-        Setting.putLiveScale(index = index == array.length - 1 ? 0 : ++index);
-        setScale(index);
+        if (mKeyDown.getScale() != 1.0f) mKeyDown.resetScale();
+        else setScale(index == array.length - 1 ? 0 : ++index);
         setR1Callback();
     }
 
@@ -975,12 +976,14 @@ public class LiveActivity extends BaseActivity implements CustomKeyDownLive.List
 
     @Override
     public void onFlingUp() {
-        prevChannel();
+        if (Setting.isInvert()) nextChannel();
+        else prevChannel();
     }
 
     @Override
     public void onFlingDown() {
-        nextChannel();
+        if (Setting.isInvert()) prevChannel();
+        else nextChannel();
     }
 
     @Override
