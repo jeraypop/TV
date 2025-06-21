@@ -4,7 +4,7 @@
     <string name="app_name">哎呦疼</string>
 
     <!-- Vod -->
-    <string name="vod_last">上次看到<xliff:g name="name">%s</xliff:g></string>
+    <string name="vod_last">上次看到:<xliff:g name="name">%s</xliff:g></string>
 
     <!-- Live -->
     <string name="live_pass">密码</string>
