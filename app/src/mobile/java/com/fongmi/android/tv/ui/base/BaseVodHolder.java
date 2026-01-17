@@ -14,4 +14,6 @@ public abstract class BaseVodHolder extends RecyclerView.ViewHolder {
     }
 
     public abstract void initView(Vod item);
+
+    public abstract void unbind();
 }

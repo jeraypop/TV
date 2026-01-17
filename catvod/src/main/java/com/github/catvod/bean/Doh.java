@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.github.catvod.crawler.R;
 import com.google.gson.Gson;
@@ -78,10 +79,9 @@ public class Doh {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Doh)) return false;
-        Doh it = (Doh) obj;
+        if (!(obj instanceof Doh it)) return false;
         return getUrl().equals(it.getUrl());
     }
 

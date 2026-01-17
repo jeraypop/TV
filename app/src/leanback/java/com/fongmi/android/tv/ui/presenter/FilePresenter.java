@@ -13,10 +13,10 @@ import java.io.File;
 
 public class FilePresenter extends Presenter {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
 
     public FilePresenter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
     }
 
     public interface OnClickListener {
@@ -24,22 +24,23 @@ public class FilePresenter extends Presenter {
         void onItemClick(File file);
     }
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterFileBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         File file = (File) object;
         ViewHolder holder = (ViewHolder) viewHolder;
         holder.binding.name.setText(file.getName());
-        holder.binding.getRoot().setOnClickListener(v -> mListener.onItemClick(file));
+        holder.binding.getRoot().setOnClickListener(v -> listener.onItemClick(file));
         holder.binding.image.setImageResource(file.isDirectory() ? R.drawable.ic_folder : R.drawable.ic_file);
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

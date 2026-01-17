@@ -5,22 +5,21 @@
     android:fillViewport="true"
     android:padding="24dp">
 
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="middle"
             android:linksClickable="false"
             android:textColor="?android:attr/textColorPrimary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textSize="20sp" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,7 +27,7 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -38,5 +37,5 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp" />
 
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 </androidx.core.widget.NestedScrollView>

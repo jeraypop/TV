@@ -1,4 +1,5 @@
 # TV
+-keep class com.fongmi.quickjs.method.** { *; }
 -keep class com.fongmi.android.tv.bean.** { *; }
 
 # Gson
@@ -37,10 +38,6 @@
 -keep class org.fourthline.cling.** { *; }
 -keep class javax.xml.** { *; }
 
-# Cronet
--keep class org.chromium.net.** { *; }
--keep class com.google.net.cronet.** { *; }
-
 # EXO
 -dontwarn org.kxml2.io.**
 -dontwarn org.xmlpull.v1.**
@@ -49,9 +46,6 @@
 -keep class org.xmlpull.** { *; }
 -keepclassmembers class org.xmlpull.** { *; }
 
-# IJK
--keep class tv.danmaku.ijk.media.player.** { *; }
-
 # Jianpian
 -keep class com.p2p.** { *; }
 
@@ -59,19 +53,19 @@
 -keep class fi.iki.elonen.** { *; }
 
 # NewPipeExtractor
--keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class javax.script.** { *; }
+-keep class jdk.dynalink.** { *; }
 -keep class org.mozilla.javascript.* { *; }
 -keep class org.mozilla.javascript.** { *; }
 -keep class org.mozilla.javascript.engine.** { *; }
--keep class javax.script.** { *; }
--keep class jdk.dynalink.** { *; }
+-keep class org.mozilla.classfile.ClassFileWriter
+-keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class org.schabi.newpipe.extractor.services.youtube.protos.** { *; }
 -dontwarn org.mozilla.javascript.JavaToJSONConverters
 -dontwarn org.mozilla.javascript.tools.**
+-dontwarn com.google.re2j.**
 -dontwarn javax.script.**
 -dontwarn jdk.dynalink.**
-
-# QuickJS
--keep class com.fongmi.quickjs.method.** { *; }
 
 # Sardine
 -keep class com.thegrizzlylabs.sardineandroid.** { *; }
@@ -85,10 +79,6 @@
 
 # XunLei
 -keep class com.xunlei.downloadlib.** { *; }
-
-# ZLive
--keep class com.sun.jna.** { *; }
--keep class com.east.android.zlive.** { *; }
 
 # Zxing
 -keep class com.google.zxing.** { *; }

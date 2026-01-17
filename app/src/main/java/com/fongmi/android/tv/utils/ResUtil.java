@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.utils;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Paint;
@@ -11,6 +12,7 @@ import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -34,20 +36,21 @@ public class ResUtil {
         return context.getResources().getDisplayMetrics();
     }
 
-    public static WindowManager getWindowManager(Context context) {
-        return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-    }
-
     public static int getScreenWidth() {
         return getScreenWidth(App.get());
     }
 
     public static int getScreenWidth(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Rect rect = getWindowManager(context).getCurrentWindowMetrics().getBounds();
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager == null) {
+            return getDisplayMetrics(context).widthPixels;
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Rect rect = windowManager.getCurrentWindowMetrics().getBounds();
             return isLand(context) ? Math.max(rect.width(), rect.height()) : Math.min(rect.width(), rect.height());
         } else {
-            return getDisplayMetrics(context).widthPixels;
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+            return displayMetrics.widthPixels;
         }
     }
 
@@ -56,12 +59,25 @@ public class ResUtil {
     }
 
     public static int getScreenHeight(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Rect rect = getWindowManager(context).getCurrentWindowMetrics().getBounds();
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager == null) {
+            return getDisplayMetrics(context).heightPixels;
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Rect rect = windowManager.getCurrentWindowMetrics().getBounds();
             return isLand(context) ? Math.min(rect.width(), rect.height()) : Math.max(rect.width(), rect.height());
         } else {
-            return getDisplayMetrics(context).heightPixels;
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+            return displayMetrics.heightPixels;
         }
+    }
+
+    public static int getScreenOrientation(Context context) {
+        int orientation = context.getResources().getConfiguration().orientation;
+        int rotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) return rotation == Surface.ROTATION_90 ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+        return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
     }
 
     public static boolean isEdge(Context context, MotionEvent e, int edge) {

@@ -17,11 +17,11 @@ import java.util.List;
 
 public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Class> mItems;
 
     public TypeAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
     }
 
@@ -75,10 +75,10 @@ public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
         Class item = mItems.get(position);
         holder.binding.text.setText(item.getTypeName());
         holder.binding.text.setActivated(item.isActivated());
-        holder.binding.text.setOnClickListener(v -> mListener.onItemClick(position, item));
+        holder.binding.text.setOnClickListener(v -> listener.onItemClick(position, item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterTypeBinding binding;
 

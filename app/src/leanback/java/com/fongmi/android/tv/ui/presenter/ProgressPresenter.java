@@ -10,17 +10,18 @@ import com.fongmi.android.tv.databinding.AdapterProgressBinding;
 
 public class ProgressPresenter extends Presenter {
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterProgressBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

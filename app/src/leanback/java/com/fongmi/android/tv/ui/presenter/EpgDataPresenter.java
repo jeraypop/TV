@@ -11,10 +11,10 @@ import com.fongmi.android.tv.databinding.AdapterEpgDataBinding;
 
 public class EpgDataPresenter extends Presenter {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
 
     public EpgDataPresenter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
     }
 
     public interface OnClickListener {
@@ -24,26 +24,27 @@ public class EpgDataPresenter extends Presenter {
         void onItemClick(EpgData item);
     }
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterEpgDataBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         EpgData item = (EpgData) object;
         ViewHolder holder = (ViewHolder) viewHolder;
         holder.binding.time.setText(item.getTime());
         holder.binding.title.setText(item.getTitle());
         holder.binding.getRoot().setSelected(item.isSelected());
-        holder.binding.getRoot().setLeftListener(mListener::hideEpg);
+        holder.binding.getRoot().setLeftListener(listener::hideEpg);
         setOnClickListener(holder, view -> {
-            if (!item.isFuture()) mListener.onItemClick(item);
+            if (!item.isFuture()) listener.onItemClick(item);
         });
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

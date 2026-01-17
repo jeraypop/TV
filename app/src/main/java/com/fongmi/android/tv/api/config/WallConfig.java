@@ -1,6 +1,8 @@
 package com.fongmi.android.tv.api.config;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.text.TextUtils;
 
 import com.bumptech.glide.Glide;
@@ -11,6 +13,7 @@ import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.impl.Callback;
+import com.fongmi.android.tv.utils.Download;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
@@ -19,11 +22,19 @@ import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InterruptedIOException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WallConfig {
 
+    private static final String TAG = WallConfig.class.getSimpleName();
+    private final AtomicInteger taskId = new AtomicInteger(0);
+
     private Config config;
+    private Future<?> future;
     private boolean sync;
 
     private static class Loader {
@@ -43,7 +54,7 @@ public class WallConfig {
     }
 
     public static void load(Config config, Callback callback) {
-        get().clear().config(config).load(callback);
+        get().config(config).load(callback);
     }
 
     public WallConfig init() {
@@ -52,52 +63,92 @@ public class WallConfig {
 
     public WallConfig config(Config config) {
         this.config = config;
-        if (config.getUrl() == null) return this;
+        if (config.isEmpty()) return this;
         this.sync = config.getUrl().equals(VodConfig.get().getWall());
         return this;
     }
 
-    public WallConfig clear() {
-        this.config = null;
-        return this;
+    private boolean isCanceled(Throwable e) {
+        return "Canceled".equals(e.getMessage()) || e instanceof InterruptedException || e.getCause() instanceof InterruptedIOException;
     }
 
-    public Config getConfig() {
-        return config == null ? Config.wall() : config;
+    public void load() {
+        load(new Callback());
     }
 
     public void load(Callback callback) {
-        App.execute(() -> loadConfig(callback));
+        int id = taskId.incrementAndGet();
+        if (future != null && !future.isDone()) future.cancel(true);
+        future = App.submit(() -> loadConfig(id, config, callback));
+        callback.start();
     }
 
-    private void loadConfig(Callback callback) {
+    private void loadConfig(int id, Config config, Callback callback) {
         try {
-            File file = write(FileUtil.getWall(0));
-            if (file.exists() && file.length() > 0) refresh(0);
-            else config(Config.find(VodConfig.get().getWall(), 2));
-            App.post(callback::success);
-            config.update();
+            OkHttp.cancel(TAG);
+            download(id, config.getUrl(), callback);
+            if (taskId.get() == id && config.equals(this.config)) config.update();
         } catch (Throwable e) {
-            App.post(() -> callback.error(Notify.getError(R.string.error_config_parse, e)));
-            config(Config.find(VodConfig.get().getWall(), 2));
             e.printStackTrace();
+            if (isCanceled(e)) return;
+            if (taskId.get() != id) return;
+            if (TextUtils.isEmpty(config.getUrl())) App.post(() -> callback.error(""));
+            else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
+            Setting.putWall(1);
+            RefreshEvent.wall();
         }
     }
 
-    private File write(File file) throws Exception {
-        Path.write(file, OkHttp.bytes(UrlUtil.convert(getUrl())));
-        Bitmap bitmap = Glide.with(App.get()).asBitmap().load(file).centerCrop().override(ResUtil.getScreenWidth(), ResUtil.getScreenHeight()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).submit().get();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(file));
-        bitmap.recycle();
-        return file;
+    private void download(int id, String url, Callback callback) throws Throwable {
+        File file = FileUtil.getWall(0);
+        if (url.startsWith("file")) Path.copy(Path.local(url), file);
+        else Download.create(UrlUtil.convert(url), file).tag(TAG).get();
+        if (!Path.exists(file)) throw new FileNotFoundException();
+        if (taskId.get() != id) return;
+        setWallType(file);
+        setSnapshot(file);
+        RefreshEvent.wall();
+        App.post(callback::success);
+    }
+
+    private void setWallType(File file) {
+        Setting.putWallType(0);
+        if (isGif(file)) Setting.putWallType(1);
+        else if (isVideo(file)) Setting.putWallType(2);
+    }
+
+    private void setSnapshot(File file) throws Throwable {
+        Bitmap bitmap = Glide.with(App.get()).asBitmap().frame(0).load(file).override(ResUtil.getScreenWidth(), ResUtil.getScreenHeight()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).submit().get();
+        try (FileOutputStream fos = new FileOutputStream(FileUtil.getWallCache())) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+        }
+    }
+
+    private boolean isVideo(File file) {
+        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+            retriever.setDataSource(file.getAbsolutePath());
+            return "yes".equalsIgnoreCase(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isGif(File file) {
+        try {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+            return "image/gif".equals(options.outMimeType);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public boolean needSync(String url) {
         return sync || TextUtils.isEmpty(config.getUrl()) || url.equals(config.getUrl());
     }
 
-    public static void refresh(int index) {
-        Setting.putWall(index);
-        RefreshEvent.wall();
+    public Config getConfig() {
+        return config == null ? Config.wall() : config;
     }
 }

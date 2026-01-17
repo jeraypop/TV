@@ -11,13 +11,13 @@ import com.fongmi.android.tv.databinding.AdapterQualityBinding;
 
 public class QualityAdapter extends RecyclerView.Adapter<QualityAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
-    private Result mResult;
+    private final OnClickListener listener;
+    private Result result;
     private int position;
 
     public QualityAdapter(OnClickListener listener) {
-        this.mListener = listener;
-        this.mResult = Result.empty();
+        this.listener = listener;
+        this.result = Result.empty();
     }
 
     public interface OnClickListener {
@@ -30,13 +30,13 @@ public class QualityAdapter extends RecyclerView.Adapter<QualityAdapter.ViewHold
     }
 
     public void addAll(Result result) {
-        mResult = result;
+        this.result = result;
         notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return mResult.getUrl().getValues().size();
+        return result.getUrl().getValues().size();
     }
 
     @NonNull
@@ -47,19 +47,19 @@ public class QualityAdapter extends RecyclerView.Adapter<QualityAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.binding.text.setText(mResult.getUrl().n(position));
+        holder.binding.text.setText(result.getUrl().n(position));
         holder.binding.text.setOnClickListener(v -> onItemClick(position));
-        holder.binding.text.setActivated(mResult.getUrl().getPosition() == position);
+        holder.binding.text.setActivated(result.getUrl().getPosition() == position);
     }
 
     private void onItemClick(int position) {
         this.position = position;
-        mResult.getUrl().set(position);
-        mListener.onItemClick(mResult);
+        result.getUrl().set(position);
+        listener.onItemClick(result);
         notifyItemRangeChanged(0, getItemCount());
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterQualityBinding binding;
 

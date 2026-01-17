@@ -6,9 +6,12 @@ import static androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDER
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.MediaMetadataCompat;
@@ -18,6 +21,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.PlaybackException;
@@ -29,11 +33,12 @@ import androidx.media3.exoplayer.drm.FrameworkMediaDrm;
 import androidx.media3.exoplayer.util.EventLogger;
 import androidx.media3.ui.PlayerView;
 
+import com.bumptech.glide.request.transition.Transition;
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.BuildConfig;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Setting;
-import com.fongmi.android.tv.bean.Channel;
 import com.fongmi.android.tv.bean.Danmaku;
 import com.fongmi.android.tv.bean.Drm;
 import com.fongmi.android.tv.bean.Result;
@@ -42,12 +47,16 @@ import com.fongmi.android.tv.bean.Track;
 import com.fongmi.android.tv.event.ActionEvent;
 import com.fongmi.android.tv.event.ErrorEvent;
 import com.fongmi.android.tv.event.PlayerEvent;
+import com.fongmi.android.tv.impl.CustomTarget;
 import com.fongmi.android.tv.impl.ParseCallback;
 import com.fongmi.android.tv.impl.SessionCallback;
 import com.fongmi.android.tv.player.danmaku.DanPlayer;
+import com.fongmi.android.tv.player.exo.ErrorMsgProvider;
 import com.fongmi.android.tv.player.exo.ExoUtil;
+import com.fongmi.android.tv.player.exo.TrackUtil;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.utils.FileUtil;
+import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
@@ -74,6 +83,8 @@ public class Players implements Player.Listener, ParseCallback {
     public static final int SOFT = 0;
     public static final int HARD = 1;
 
+    private final ErrorMsgProvider provider;
+    private final AudioManager audioManager;
     private final StringBuilder builder;
     private final Formatter formatter;
     private final Runnable runnable;
@@ -94,6 +105,7 @@ public class Players implements Player.Listener, ParseCallback {
     private Drm drm;
     private Sub sub;
 
+    private boolean initTrack;
     private int decode;
     private int retry;
 
@@ -104,10 +116,12 @@ public class Players implements Player.Listener, ParseCallback {
     }
 
     private Players(Activity activity) {
-        decode = Setting.getDecode();
+        decode = HARD;
         builder = new StringBuilder();
+        provider = new ErrorMsgProvider();
         runnable = () -> ErrorEvent.timeout(tag);
         formatter = new Formatter(builder, Locale.getDefault());
+        audioManager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
         createSession(activity);
     }
 
@@ -119,6 +133,11 @@ public class Players implements Player.Listener, ParseCallback {
         MediaControllerCompat.setMediaController(activity, session.getController());
     }
 
+    private void releaseSession() {
+        session.setActive(false);
+        session.release();
+    }
+
     public void init(PlayerView view) {
         releasePlayer();
         setPlayer(view);
@@ -127,8 +146,8 @@ public class Players implements Player.Listener, ParseCallback {
 
     private void setPlayer(PlayerView view) {
         exoPlayer = new ExoPlayer.Builder(App.get()).setLoadControl(ExoUtil.buildLoadControl()).setTrackSelector(ExoUtil.buildTrackSelector()).setRenderersFactory(ExoUtil.buildRenderersFactory(isHard() ? EXTENSION_RENDERER_MODE_ON : EXTENSION_RENDERER_MODE_PREFER)).setMediaSourceFactory(ExoUtil.buildMediaSourceFactory()).build();
+        if (BuildConfig.DEBUG) exoPlayer.addAnalyticsListener(new EventLogger());
         exoPlayer.setAudioAttributes(AudioAttributes.DEFAULT, true);
-        exoPlayer.addAnalyticsListener(new EventLogger());
         exoPlayer.setHandleAudioBecomingNoisy(true);
         exoPlayer.setPlayWhenReady(true);
         exoPlayer.addListener(this);
@@ -234,17 +253,21 @@ public class Players implements Player.Listener, ParseCallback {
         return exoPlayer == null ? 0 : exoPlayer.getBufferedPosition();
     }
 
-    public boolean retried() {
-        return ++retry > 2;
-    }
-
     public boolean haveTrack(int type) {
-        return exoPlayer != null && ExoUtil.haveTrack(exoPlayer.getCurrentTracks(), type);
+        return exoPlayer != null && TrackUtil.count(exoPlayer.getCurrentTracks(), type) > 0;
     }
 
     public boolean haveDanmaku() {
         if (danmakus != null) for (Danmaku danmaku : danmakus) if (danmaku.isSelected()) return true;
         return false;
+    }
+
+    public boolean canSetOpening(long position, long duration) {
+        return position > 0 && duration > 0 && position <= Constant.getOpEdLimit(duration);
+    }
+
+    public boolean canSetEnding(long position, long duration) {
+        return position > 0 && duration > 0 && duration - position <= Constant.getOpEdLimit(duration);
     }
 
     public boolean isPlaying() {
@@ -328,7 +351,6 @@ public class Players implements Player.Listener, ParseCallback {
 
     public void toggleDecode() {
         decode = isHard() ? SOFT : HARD;
-        Setting.putDecode(decode);
         init(view);
     }
 
@@ -382,7 +404,7 @@ public class Players implements Player.Listener, ParseCallback {
     public void release() {
         stopParse();
         releasePlayer();
-        session.release();
+        releaseSession();
         removeTimeoutCheck();
         Server.get().setPlayer(null);
         App.execute(() -> Source.get().stop());
@@ -397,20 +419,6 @@ public class Players implements Player.Listener, ParseCallback {
 
     private void removeTimeoutCheck() {
         App.removeCallbacks(runnable);
-    }
-
-    public void start(Channel channel, long timeout) {
-        if (channel.getDrm() != null && !FrameworkMediaDrm.isCryptoSchemeSupported(channel.getDrm().getUUID())) {
-            ErrorEvent.drm(tag);
-        } else if (channel.hasMsg()) {
-            ErrorEvent.extract(tag, channel.getMsg());
-        } else if (channel.getParse() == 1) {
-            startParse(channel.result(), false);
-        } else if (isIllegal(channel.getUrl())) {
-            ErrorEvent.url(tag);
-        } else {
-            setMediaItem(channel, timeout);
-        }
     }
 
     public void start(Result result, boolean useParse, long timeout) {
@@ -454,7 +462,7 @@ public class Players implements Player.Listener, ParseCallback {
         return subs;
     }
 
-    private void setMediaItem() {
+    public void setMediaItem() {
         if (url != null) setMediaItem(headers, url, format, drm, subs, danmakus, Constant.TIMEOUT_PLAY);
     }
 
@@ -466,21 +474,18 @@ public class Players implements Player.Listener, ParseCallback {
         setMediaItem(headers, url, format, drm, subs, danmakus, Constant.TIMEOUT_PLAY);
     }
 
-    private void setMediaItem(Channel channel, long timeout) {
-        setMediaItem(channel.getHeaders(), channel.getUrl(), channel.getFormat(), channel.getDrm(), new ArrayList<>(), new ArrayList<>(), timeout);
-    }
-
     private void setMediaItem(Result result, long timeout) {
-        setMediaItem(result.getHeaders(), result.getRealUrl(), result.getFormat(), result.getDrm(), result.getSubs(), result.getDanmaku(), timeout);
+        setMediaItem(result.getHeader(), result.getRealUrl(), result.getFormat(), result.getDrm(), result.getSubs(), result.getDanmaku(), timeout);
     }
 
     private void setMediaItem(Map<String, String> headers, String url, String format, Drm drm, List<Sub> subs, List<Danmaku> danmakus, long timeout) {
         if (exoPlayer != null) exoPlayer.setMediaItem(ExoUtil.getMediaItem(this.headers = checkUa(headers), UrlUtil.uri(this.url = url), this.format = format, this.drm = drm, checkSub(this.subs = subs), decode));
+        Logger.t(TAG).d("headers=%s\nurl=%s\nformat=%s\ndrm=%s\nsubs=%s\ndanmakus=%s\ntimeout=%s", this.headers, url, format, drm, this.subs, danmakus, timeout);
         if (danPlayer != null) setDanmaku(this.danmakus = danmakus);
         App.post(runnable, timeout);
         PlayerEvent.prepare(tag);
         session.setActive(true);
-        Logger.t(TAG).d(url);
+        initTrack = false;
         prepare();
     }
 
@@ -492,7 +497,7 @@ public class Players implements Player.Listener, ParseCallback {
         danPlayer.setDanmaku(item);
         if (danmakus == null) danmakus = new ArrayList<>();
         if (!item.isEmpty() && !danmakus.contains(item)) danmakus.add(0, item);
-        for (int i = 0; i < danmakus.size(); i++) danmakus.get(i).setSelected(danmakus.get(i).getUrl().equals(item.getUrl()) && !danmakus.get(i).isSelected());
+        danmakus.forEach(d -> d.setSelected(d.getUrl().equals(item.getUrl())));
     }
 
     public void setDanmakuSize(float size) {
@@ -500,19 +505,11 @@ public class Players implements Player.Listener, ParseCallback {
     }
 
     public void resetTrack() {
-        if (exoPlayer != null) ExoUtil.resetTrack(exoPlayer);
+        if (exoPlayer != null) TrackUtil.reset(exoPlayer);
     }
 
     public void setTrack(List<Track> tracks) {
-        for (Track track : tracks) setTrack(track);
-    }
-
-    private void setTrack(Track item) {
-        if (item.isSelected()) {
-            ExoUtil.selectTrack(exoPlayer, item.getGroup(), item.getTrack());
-        } else {
-            ExoUtil.deselectTrack(exoPlayer, item.getGroup(), item.getTrack());
-        }
+        if (exoPlayer != null && !tracks.isEmpty()) TrackUtil.setTrackSelection(exoPlayer, tracks);
     }
 
     private void setPlaybackState(int state) {
@@ -528,15 +525,7 @@ public class Players implements Player.Listener, ParseCallback {
         return scheme.isEmpty() || "file".equals(scheme) ? !Path.exists(url) : host.isEmpty();
     }
 
-    private MediaMetadataCompat.Builder putBitmap(MediaMetadataCompat.Builder builder, Drawable drawable) {
-        try {
-            return builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, ((BitmapDrawable) drawable).getBitmap());
-        } catch (Exception ignored) {
-            return builder;
-        }
-    }
-
-    public void setMetadata(String title, String artist, String artUri, Drawable drawable) {
+    public void setMetadata(String title, String artist, String artUri) {
         MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
         builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
         builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
@@ -544,8 +533,25 @@ public class Players implements Player.Listener, ParseCallback {
         builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, artUri);
         builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, artUri);
         builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, getDuration());
-        session.setMetadata(putBitmap(builder, drawable).build());
-        ActionEvent.update();
+        putBitmap(builder, artUri);
+    }
+
+    private void putBitmap(MediaMetadataCompat.Builder builder, String artUri) {
+        ImgUtil.load(artUri, new CustomTarget<>() {
+            @Override
+            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, resource);
+                session.setMetadata(builder.build());
+                ActionEvent.update();
+            }
+
+            @Override
+            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, ((BitmapDrawable) errorDrawable).getBitmap());
+                session.setMetadata(builder.build());
+                ActionEvent.update();
+            }
+        });
     }
 
     public void share(Activity activity, CharSequence title) {
@@ -630,6 +636,13 @@ public class Players implements Player.Listener, ParseCallback {
     }
 
     @Override
+    public void onIsPlayingChanged(boolean isPlaying) {
+        if (isPlaying() && audioManager != null && audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION) pause();
+        PlayerEvent.playing(tag);
+        ActionEvent.update();
+    }
+
+    @Override
     public void onPlaybackStateChanged(int state) {
         if (danPlayer != null) danPlayer.check(state);
         PlayerEvent.state(tag, state);
@@ -643,16 +656,16 @@ public class Players implements Player.Listener, ParseCallback {
 
     @Override
     public void onTracksChanged(@NonNull Tracks tracks) {
-        if (tracks.isEmpty()) return;
+        if (tracks.isEmpty() || initTrack) return;
         setTrack(Track.find(getKey()));
         PlayerEvent.track(tag);
+        initTrack = true;
     }
 
     @Override
-    public void onPlayerError(@NonNull PlaybackException error) {
-        Logger.t(TAG).e(error.errorCode + "," + url);
-        if (retried()) ErrorEvent.extract(tag, error.getErrorCodeName());
-        else switch (error.errorCode) {
+    public void onPlayerError(@NonNull PlaybackException e) {
+        if (++retry > 2) ErrorEvent.extract(tag, provider.get(e));
+        else switch (e.errorCode) {
             case PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW:
                 seekToDefaultPosition();
                 break;
@@ -666,10 +679,10 @@ public class Players implements Player.Listener, ParseCallback {
             case PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED:
             case PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED:
             case PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED:
-                setFormat(ExoUtil.getMimeType(error.errorCode));
+                setFormat(ExoUtil.getMimeType(e.errorCode));
                 break;
             default:
-                ErrorEvent.extract(tag, error.getErrorCodeName());
+                ErrorEvent.extract(tag, provider.get(e));
                 break;
         }
     }

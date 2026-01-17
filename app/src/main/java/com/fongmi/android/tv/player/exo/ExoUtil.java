@@ -10,11 +10,9 @@ import android.view.accessibility.CaptioningManager;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
-import androidx.media3.common.TrackSelectionOverride;
-import androidx.media3.common.Tracks;
 import androidx.media3.common.util.Util;
 import androidx.media3.exoplayer.DefaultLoadControl;
-import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.LoadControl;
 import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.source.MediaSource;
@@ -33,8 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory;
 
 public class ExoUtil {
 
@@ -58,7 +54,7 @@ public class ExoUtil {
     }
 
     public static RenderersFactory buildRenderersFactory(int renderMode) {
-        return new NextRenderersFactory(App.get()).setEnableDecoderFallback(true).setExtensionRendererMode(renderMode);
+        return new DefaultRenderersFactory(App.get()).setEnableDecoderFallback(true).setExtensionRendererMode(renderMode);
     }
 
     public static MediaSource.Factory buildMediaSourceFactory() {
@@ -67,28 +63,6 @@ public class ExoUtil {
 
     public static CaptionStyleCompat getCaptionStyle() {
         return Setting.isCaption() ? CaptionStyleCompat.createFromCaptionStyle(((CaptioningManager) App.get().getSystemService(Context.CAPTIONING_SERVICE)).getUserStyle()) : new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
-    }
-
-    public static boolean haveTrack(Tracks tracks, int type) {
-        int count = 0;
-        for (Tracks.Group trackGroup : tracks.getGroups()) if (trackGroup.getType() == type) count += trackGroup.length;
-        return count > 0;
-    }
-
-    public static void selectTrack(ExoPlayer player, int group, int track) {
-        List<Integer> trackIndices = new ArrayList<>();
-        selectTrack(player, group, track, trackIndices);
-        setTrackParameters(player, group, trackIndices);
-    }
-
-    public static void deselectTrack(ExoPlayer player, int group, int track) {
-        List<Integer> trackIndices = new ArrayList<>();
-        deselectTrack(player, group, track, trackIndices);
-        setTrackParameters(player, group, trackIndices);
-    }
-
-    public static void resetTrack(ExoPlayer player) {
-        player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon().clearOverrides().build());
     }
 
     public static void setSubtitleView(PlayerView exo) {
@@ -132,26 +106,5 @@ public class ExoUtil {
         List<MediaItem.SubtitleConfiguration> configs = new ArrayList<>();
         if (subs != null) for (Sub sub : subs) configs.add(sub.config());
         return configs;
-    }
-
-    private static void selectTrack(ExoPlayer player, int group, int track, List<Integer> trackIndices) {
-        if (group >= player.getCurrentTracks().getGroups().size()) return;
-        Tracks.Group trackGroup = player.getCurrentTracks().getGroups().get(group);
-        for (int i = 0; i < trackGroup.length; i++) {
-            if (i == track || trackGroup.isTrackSelected(i)) trackIndices.add(i);
-        }
-    }
-
-    private static void deselectTrack(ExoPlayer player, int group, int track, List<Integer> trackIndices) {
-        if (group >= player.getCurrentTracks().getGroups().size()) return;
-        Tracks.Group trackGroup = player.getCurrentTracks().getGroups().get(group);
-        for (int i = 0; i < trackGroup.length; i++) {
-            if (i != track && trackGroup.isTrackSelected(i)) trackIndices.add(i);
-        }
-    }
-
-    private static void setTrackParameters(ExoPlayer player, int group, List<Integer> trackIndices) {
-        if (group >= player.getCurrentTracks().getGroups().size()) return;
-        player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon().setOverrideForType(new TrackSelectionOverride(player.getCurrentTracks().getGroups().get(group).getMediaTrackGroup(), trackIndices)).build());
     }
 }

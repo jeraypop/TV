@@ -13,4 +13,6 @@ public abstract class BaseVodHolder extends Presenter.ViewHolder {
     }
 
     public abstract void initView(Vod item);
+
+    public abstract void unbind();
 }

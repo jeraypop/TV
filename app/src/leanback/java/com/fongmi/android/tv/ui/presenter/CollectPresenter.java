@@ -11,13 +11,14 @@ import com.fongmi.android.tv.databinding.AdapterFilterBinding;
 
 public class CollectPresenter extends Presenter {
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterFilterBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         Collect item = (Collect) object;
         ViewHolder holder = (ViewHolder) viewHolder;
         holder.binding.text.setText(item.getSite().getName());
@@ -25,7 +26,7 @@ public class CollectPresenter extends Presenter {
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

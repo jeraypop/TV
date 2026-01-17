@@ -5,6 +5,7 @@ import android.os.Parcelable;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
@@ -14,20 +15,20 @@ import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.api.loader.BaseLoader;
 import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.gson.ExtAdapter;
+import com.fongmi.android.tv.gson.HeaderAdapter;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Json;
 import com.github.catvod.utils.Trans;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import okhttp3.Headers;
 
 @Entity
 public class Site implements Parcelable {
@@ -46,8 +47,8 @@ public class Site implements Parcelable {
     private String api;
 
     @Ignore
-    @JsonAdapter(ExtAdapter.class)
     @SerializedName("ext")
+    @JsonAdapter(ExtAdapter.class)
     private String ext;
 
     @Ignore
@@ -94,7 +95,8 @@ public class Site implements Parcelable {
 
     @Ignore
     @SerializedName("header")
-    private JsonElement header;
+    @JsonAdapter(HeaderAdapter.class)
+    private Map<String, String> header;
 
     @Ignore
     @SerializedName("style")
@@ -103,18 +105,16 @@ public class Site implements Parcelable {
     @Ignore
     private boolean activated;
 
-    public static Site objectFrom(JsonElement element) {
+    public static Site objectFrom(JsonElement element, String spider) {
         try {
-            return App.gson().fromJson(element, Site.class);
+            Site site = App.gson().fromJson(element, Site.class);
+            if (site.getJar().isEmpty()) site.setJar(spider);
+            site.setApi(UrlUtil.convert(site.getApi()));
+            site.setExt(UrlUtil.convert(site.getExt()));
+            return site.trans();
         } catch (Exception e) {
             return new Site();
         }
-    }
-
-    public static Site get(String key) {
-        Site site = new Site();
-        site.setKey(key);
-        return site;
     }
 
     public static Site get(String key, String name) {
@@ -219,8 +219,8 @@ public class Site implements Parcelable {
         this.categories = categories;
     }
 
-    public JsonElement getHeader() {
-        return header;
+    public Map<String, String> getHeader() {
+        return header == null ? new HashMap<>() : header;
     }
 
     public Style getStyle() {
@@ -277,10 +277,6 @@ public class Site implements Parcelable {
         return getKey().isEmpty() && getName().isEmpty();
     }
 
-    public Headers getHeaders() {
-        return Headers.of(Json.toMap(getHeader()));
-    }
-
     public Site fetchExt() {
         if (!getExt().startsWith("http")) return this;
         String extend = OkHttp.string(getExt());
@@ -290,14 +286,12 @@ public class Site implements Parcelable {
 
     public Site trans() {
         if (Trans.pass()) return this;
-        List<String> categories = new ArrayList<>();
-        for (String cate : getCategories()) categories.add(Trans.s2t(cate));
-        setCategories(categories);
+        this.name = Trans.s2t(name);
+        setCategories(getCategories().stream().map(Trans::s2t).toList());
         return this;
     }
 
-    public Site sync() {
-        Site item = find(getKey());
+    public Site sync(Site item) {
         if (item == null) return this;
         if (getChangeable() != 0) setChangeable(Math.max(1, item.getChangeable()));
         if (getSearchable() != 0) setSearchable(Math.max(1, item.getSearchable()));
@@ -313,8 +307,8 @@ public class Site implements Parcelable {
         return BaseLoader.get().getSpider(getKey(), getApi(), getExt(), getJar());
     }
 
-    public static Site find(String key) {
-        return AppDatabase.get().getSiteDao().find(key);
+    public static List<Site> findAll() {
+        return AppDatabase.get().getSiteDao().findAll();
     }
 
     public void save() {
@@ -322,11 +316,15 @@ public class Site implements Parcelable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Site)) return false;
-        Site it = (Site) obj;
+        if (!(obj instanceof Site it)) return false;
         return getKey().equals(it.getKey());
+    }
+
+    @Override
+    public int hashCode() {
+        return getKey().hashCode();
     }
 
     @Override

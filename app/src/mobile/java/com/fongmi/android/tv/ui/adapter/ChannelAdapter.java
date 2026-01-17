@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.fongmi.android.tv.bean.Channel;
 import com.fongmi.android.tv.databinding.AdapterChannelBinding;
 
@@ -14,11 +15,11 @@ import java.util.List;
 
 public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Channel> mItems;
 
     public ChannelAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
     }
 
@@ -74,14 +75,19 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ViewHold
     public void onBindViewHolder(@NonNull ChannelAdapter.ViewHolder holder, int position) {
         Channel item = mItems.get(position);
         item.loadLogo(holder.binding.logo);
-        holder.binding.name.setText(item.getName());
+        holder.binding.name.setText(item.getShow());
         holder.binding.number.setText(item.getNumber());
         holder.binding.getRoot().setSelected(item.isSelected());
-        holder.binding.getRoot().setOnClickListener(view -> mListener.onItemClick(item));
-        holder.binding.getRoot().setOnLongClickListener(view -> mListener.onLongClick(item));
+        holder.binding.getRoot().setOnClickListener(view -> listener.onItemClick(item));
+        holder.binding.getRoot().setOnLongClickListener(view -> listener.onLongClick(item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        Glide.with(holder.binding.logo).clear(holder.binding.logo);
+    }
+
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterChannelBinding binding;
 

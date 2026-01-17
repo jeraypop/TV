@@ -6,21 +6,26 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.media3.common.C;
+import androidx.media3.common.Format;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.Tracks;
+import androidx.media3.ui.DefaultTrackNameProvider;
+import androidx.media3.ui.TrackNameProvider;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.bean.Track;
 import com.fongmi.android.tv.databinding.DialogTrackBinding;
 import com.fongmi.android.tv.player.Players;
-import com.fongmi.android.tv.player.exo.TrackNameProvider;
 import com.fongmi.android.tv.ui.adapter.TrackAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.FileChooser;
@@ -46,7 +51,7 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
 
     public TrackDialog() {
         this.adapter = new TrackAdapter(this);
-        this.provider = new TrackNameProvider();
+        this.provider = new DefaultTrackNameProvider(App.get().getResources());
     }
 
     public TrackDialog player(Players player) {
@@ -90,12 +95,12 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
     }
 
     private void onSubtitle(View view) {
-        listener.onSubtitleClick();
+        App.post(() -> listener.onSubtitleClick(), 100);
         dismiss();
     }
 
     private void showChooser(View view) {
-        FileChooser.from(this).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, "audio/*", "text/*", "application/octet-stream"});
+        FileChooser.from(launcher).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, "audio/*", "text/*", "application/octet-stream"});
         player.pause();
     }
 
@@ -111,11 +116,10 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
             Tracks.Group trackGroup = groups.get(i);
             if (trackGroup.getType() != type) continue;
             for (int j = 0; j < trackGroup.length; j++) {
-                Track item = new Track(type, provider.getTrackName(trackGroup.getTrackFormat(j)));
-                item.setAdaptive(trackGroup.isAdaptiveSupported());
+                Format format = trackGroup.getTrackFormat(j);
+                String name = provider.getTrackName(format);
+                Track item = new Track(type, name, format.id + format.sampleMimeType);
                 item.setSelected(trackGroup.isTrackSelected(j));
-                item.setGroup(i);
-                item.setTrack(j);
                 items.add(item);
             }
         }
@@ -124,17 +128,14 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
     @Override
     public void onItemClick(Track item) {
         player.setTrack(Arrays.asList(item.key(player.getKey()).save()));
-        if (item.isAdaptive()) return;
         dismiss();
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode != Activity.RESULT_OK || requestCode != FileChooser.REQUEST_PICK_FILE) return;
-        player.setSub(Sub.from(FileChooser.getPathFromUri(data.getData())));
+    private final ActivityResultLauncher<Intent> launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) return;
+        player.setSub(Sub.from(FileChooser.getPathFromUri(result.getData().getData())));
         dismiss();
-    }
+    });
 
     public interface Listener {
 

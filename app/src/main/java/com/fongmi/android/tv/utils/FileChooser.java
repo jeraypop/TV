@@ -1,6 +1,5 @@
 package com.fongmi.android.tv.utils;
 
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
@@ -14,7 +13,7 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
-import androidx.fragment.app.Fragment;
+import androidx.activity.result.ActivityResultLauncher;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.ui.activity.FileActivity;
@@ -23,29 +22,19 @@ import com.github.catvod.utils.Path;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class FileChooser {
 
-    public static final int REQUEST_PICK_FILE = 9999;
+    private final ActivityResultLauncher<Intent> launcher;
 
-    private Activity activity;
-    private Fragment fragment;
-
-    public static FileChooser from(Activity activity) {
-        return new FileChooser(activity);
+    public static FileChooser from(ActivityResultLauncher<Intent> launcher) {
+        return new FileChooser(launcher);
     }
 
-    public static FileChooser from(Fragment fragment) {
-        return new FileChooser(fragment);
-    }
-
-    private FileChooser(Activity activity) {
-        this.activity = activity;
-    }
-
-    private FileChooser(Fragment fragment) {
-        this.fragment = fragment;
+    public FileChooser(ActivityResultLauncher<Intent> launcher) {
+        this.launcher = launcher;
     }
 
     public void show() {
@@ -53,14 +42,14 @@ public class FileChooser {
     }
 
     public void show(String mimeType) {
-        show(mimeType, new String[]{"*/*"}, REQUEST_PICK_FILE);
+        show(mimeType, new String[]{"*/*"});
     }
 
     public void show(String[] mimeTypes) {
-        show("*/*", mimeTypes, REQUEST_PICK_FILE);
+        show("*/*", mimeTypes);
     }
 
-    public void show(String mimeType, String[] mimeTypes, int code) {
+    public void show(String mimeType, String[] mimeTypes) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType(mimeType);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -69,11 +58,9 @@ public class FileChooser {
         intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
         List<ResolveInfo> resolveInfos = App.get().getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         if (Util.isLeanback() || resolveInfos.isEmpty() || resolveInfos.get(0).activityInfo.packageName.contains("frameworkpackagestubs")) {
-            if (activity != null) activity.startActivityForResult(new Intent(activity, FileActivity.class), code);
-            if (fragment != null) fragment.startActivityForResult(new Intent(fragment.getActivity(), FileActivity.class), code);
+            launcher.launch(new Intent(App.get(), FileActivity.class));
         } else {
-            if (activity != null) activity.startActivityForResult(Intent.createChooser(intent, ""), code);
-            if (fragment != null) fragment.startActivityForResult(Intent.createChooser(intent, ""), code);
+            launcher.launch(Intent.createChooser(intent, ""));
         }
     }
 
@@ -89,13 +76,13 @@ public class FileChooser {
         return getPathFromUri(App.get(), uri);
     }
 
-    public static String getPathFromUri(Context context, Uri uri) {
+    private static String getPathFromUri(Context context, Uri uri) {
         if (uri == null) return null;
         String path = null;
         if (DocumentsContract.isDocumentUri(context, uri)) path = getPathFromDocumentUri(context, uri);
         else if (ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) path = getDataColumn(context, uri);
         else if (ContentResolver.SCHEME_FILE.equalsIgnoreCase(uri.getScheme())) path = uri.getPath();
-        return path != null ? URLDecoder.decode(path) : createFileFromUri(context, uri);
+        return path != null ? URLDecoder.decode(path, StandardCharsets.UTF_8) : createFileFromUri(context, uri);
     }
 
     private static String getPathFromDocumentUri(Context context, Uri uri) {
@@ -127,22 +114,17 @@ public class FileChooser {
     }
 
     private static String getPath(Context context, String[] split) {
-        switch (split[0]) {
-            case "image":
-                return getDataColumn(context, ContentUris.withAppendedId(getImageUri(), Long.parseLong(split[1])));
-            case "video":
-                return getDataColumn(context, ContentUris.withAppendedId(getVideoUri(), Long.parseLong(split[1])));
-            case "audio":
-                return getDataColumn(context, ContentUris.withAppendedId(getAudioUri(), Long.parseLong(split[1])));
-            default:
-                return getDataColumn(context, ContentUris.withAppendedId(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL), Long.parseLong(split[1])));
-        }
+        return switch (split[0]) {
+            case "image" -> getDataColumn(context, ContentUris.withAppendedId(getImageUri(), Long.parseLong(split[1])));
+            case "video" -> getDataColumn(context, ContentUris.withAppendedId(getVideoUri(), Long.parseLong(split[1])));
+            case "audio" -> getDataColumn(context, ContentUris.withAppendedId(getAudioUri(), Long.parseLong(split[1])));
+            default -> getDataColumn(context, ContentUris.withAppendedId(getFilesUri(), Long.parseLong(split[1])));
+        };
     }
 
     private static String createFileFromUri(Context context, Uri uri) {
         String[] projection = {MediaStore.MediaColumns.DISPLAY_NAME};
-        Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null);
-        try (cursor) {
+        try (Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null)) {
             if (cursor == null || !cursor.moveToFirst()) return null;
             InputStream is = context.getContentResolver().openInputStream(uri);
             if (is == null) return null;
@@ -157,8 +139,7 @@ public class FileChooser {
 
     private static String getDataColumn(Context context, Uri uri) {
         String[] projection = {MediaStore.MediaColumns.DATA};
-        Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null);
-        try (cursor) {
+        try (Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null)) {
             if (cursor == null || !cursor.moveToFirst()) return null;
             return cursor.getString(cursor.getColumnIndexOrThrow(projection[0]));
         } catch (Exception e) {
@@ -168,8 +149,7 @@ public class FileChooser {
 
     private static String getNameColumn(Context context, Uri uri) {
         String[] projection = {MediaStore.MediaColumns.DISPLAY_NAME};
-        Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null);
-        try (cursor) {
+        try (Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null)) {
             if (cursor == null || !cursor.moveToFirst()) return null;
             return cursor.getString(cursor.getColumnIndexOrThrow(projection[0]));
         } catch (Exception e) {
@@ -198,6 +178,14 @@ public class FileChooser {
             return MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
         } else {
             return MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
+    }
+
+    public static Uri getFilesUri() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            return MediaStore.Files.getContentUri("external");
         }
     }
 

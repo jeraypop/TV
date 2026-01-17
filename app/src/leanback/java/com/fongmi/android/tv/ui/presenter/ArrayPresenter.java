@@ -13,13 +13,13 @@ import com.fongmi.android.tv.utils.ResUtil;
 
 public class ArrayPresenter extends Presenter {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final String backward;
     private final String forward;
     private final String reverse;
 
     public ArrayPresenter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.backward = ResUtil.getString(R.string.play_backward);
         this.forward = ResUtil.getString(R.string.play_forward);
         this.reverse = ResUtil.getString(R.string.play_reverse);
@@ -32,23 +32,24 @@ public class ArrayPresenter extends Presenter {
         void onRevPlay(TextView view);
     }
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterArrayBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         ViewHolder holder = (ViewHolder) viewHolder;
         String text = object.toString();
         holder.binding.text.setText(text);
-        if (text.equals(reverse)) setOnClickListener(holder, view -> mListener.onRevSort());
-        else if (text.equals(backward) || text.equals(forward)) setOnClickListener(holder, view -> mListener.onRevPlay(holder.binding.text));
+        if (text.equals(reverse)) setOnClickListener(holder, view -> listener.onRevSort());
+        else if (text.equals(backward) || text.equals(forward)) setOnClickListener(holder, view -> listener.onRevPlay(holder.binding.text));
         else setOnClickListener(holder, null);
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

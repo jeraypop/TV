@@ -14,11 +14,11 @@ import java.util.List;
 
 public class EpgDataAdapter extends RecyclerView.Adapter<EpgDataAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<EpgData> mItems;
 
     public EpgDataAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
     }
 
@@ -65,11 +65,11 @@ public class EpgDataAdapter extends RecyclerView.Adapter<EpgDataAdapter.ViewHold
         holder.binding.title.setText(item.getTitle());
         holder.binding.getRoot().setSelected(item.isSelected());
         holder.binding.getRoot().setOnClickListener(view -> {
-            if (!item.isFuture()) mListener.onItemClick(item);
+            if (!item.isFuture()) listener.onItemClick(item);
         });
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterEpgDataBinding binding;
 

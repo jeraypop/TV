@@ -2,7 +2,6 @@ package com.fongmi.android.tv.utils;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.StatFs;
 import android.text.TextUtils;
 
@@ -33,6 +32,10 @@ public class FileUtil {
         return Path.files("wallpaper_" + index);
     }
 
+    public static File getWallCache() {
+        return Path.files("wallpaper_cache");
+    }
+
     public static void openFile(File file) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -42,7 +45,7 @@ public class FileUtil {
     }
 
     public static void gzipCompress(File target) {
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[16384];
         try (FileInputStream is = new FileInputStream(target); GZIPOutputStream os = new GZIPOutputStream(new FileOutputStream(target.getAbsolutePath() + ".gz"))) {
             int read;
             while ((read = is.read(buffer)) > 0) os.write(buffer, 0, read);
@@ -54,7 +57,7 @@ public class FileUtil {
     }
 
     public static void gzipDecompress(File target, File path) {
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[16384];
         try (GZIPInputStream is = new GZIPInputStream(new BufferedInputStream(new FileInputStream(target))); BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(path))) {
             int read;
             while ((read = is.read(buffer)) != -1) os.write(buffer, 0, read);
@@ -113,7 +116,7 @@ public class FileUtil {
     }
 
     public static Uri getShareUri(File file) {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.N ? Uri.fromFile(file) : FileProvider.getUriForFile(App.get(), App.get().getPackageName() + ".provider", file);
+        return FileProvider.getUriForFile(App.get(), App.get().getPackageName() + ".provider", file);
     }
 
     private static String getMimeType(String fileName) {

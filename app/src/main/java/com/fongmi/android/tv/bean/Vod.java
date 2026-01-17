@@ -2,11 +2,16 @@ package com.fongmi.android.tv.bean;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.Html;
 import android.text.TextUtils;
 import android.view.View;
 
+import androidx.annotation.Nullable;
+
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.impl.Diffable;
 import com.fongmi.android.tv.utils.Sniffer;
+import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -20,9 +25,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.IntStream;
 
 @Root(strict = false)
-public class Vod implements Parcelable {
+public class Vod implements Parcelable, Diffable<Vod> {
 
     @Element(name = "id", required = false)
     @SerializedName("vod_id")
@@ -70,9 +77,6 @@ public class Vod implements Parcelable {
     @SerializedName("vod_play_url")
     private String vodPlayUrl;
 
-    @SerializedName("vod_wallpaper")
-    private String vodWallpaper;
-
     @SerializedName("vod_tag")
     private String vodTag;
 
@@ -109,19 +113,19 @@ public class Vod implements Parcelable {
     public Vod() {
     }
 
-    public String getVodId() {
+    public String getId() {
         return TextUtils.isEmpty(vodId) ? "" : vodId.trim();
     }
 
-    public void setVodId(String vodId) {
+    public void setId(String vodId) {
         this.vodId = vodId;
     }
 
-    public String getVodName() {
-        return TextUtils.isEmpty(vodName) ? "" : vodName.trim();
+    public String getName() {
+        return TextUtils.isEmpty(vodName) ? "" : Html.fromHtml(vodName, Html.FROM_HTML_MODE_LEGACY).toString().trim();
     }
 
-    public void setVodName(String vodName) {
+    public void setName(String vodName) {
         this.vodName = vodName;
     }
 
@@ -129,51 +133,63 @@ public class Vod implements Parcelable {
         return TextUtils.isEmpty(typeName) ? "" : typeName.trim();
     }
 
-    public String getVodPic() {
+    public String getPic() {
         return TextUtils.isEmpty(vodPic) ? "" : vodPic.trim();
     }
 
-    public void setVodPic(String vodPic) {
+    public void setPic(String vodPic) {
         this.vodPic = vodPic;
     }
 
-    public String getVodRemarks() {
+    public String getRemarks() {
         return TextUtils.isEmpty(vodRemarks) ? "" : vodRemarks.trim();
     }
 
-    public String getVodYear() {
+    public String getYear() {
         return TextUtils.isEmpty(vodYear) ? "" : vodYear.trim();
     }
 
-    public String getVodArea() {
+    public String getArea() {
         return TextUtils.isEmpty(vodArea) ? "" : vodArea.trim();
     }
 
-    public String getVodDirector() {
+    public String getDirector() {
         return TextUtils.isEmpty(vodDirector) ? "" : vodDirector.trim();
     }
 
-    public String getVodActor() {
+    public void setDirector(String vodDirector) {
+        this.vodDirector = vodDirector;
+    }
+
+    public String getActor() {
         return TextUtils.isEmpty(vodActor) ? "" : vodActor.trim();
     }
 
-    public String getVodContent() {
-        return TextUtils.isEmpty(vodContent) ? "" : vodContent.trim().replace("\n", "<br>");
+    public String getContent() {
+        return TextUtils.isEmpty(vodContent) ? "" : Util.clean(vodContent);
     }
 
-    public String getVodPlayFrom() {
+    public void setContent(String vodContent) {
+        this.vodContent = vodContent;
+    }
+
+    public String getPlayFrom() {
         return TextUtils.isEmpty(vodPlayFrom) ? "" : vodPlayFrom;
     }
 
-    public String getVodPlayUrl() {
+    public void setPlayFrom(String vodPlayFrom) {
+        this.vodPlayFrom = vodPlayFrom;
+    }
+
+    public String getPlayUrl() {
         return TextUtils.isEmpty(vodPlayUrl) ? "" : vodPlayUrl;
     }
 
-    public String getVodWallpaper() {
-        return TextUtils.isEmpty(vodWallpaper) ? "" : vodWallpaper;
+    public void setPlayUrl(String vodPlayUrl) {
+        this.vodPlayUrl = vodPlayUrl;
     }
 
-    public String getVodTag() {
+    public String getTag() {
         return TextUtils.isEmpty(vodTag) ? "" : vodTag;
     }
 
@@ -201,11 +217,11 @@ public class Vod implements Parcelable {
         return ratio;
     }
 
-    public List<Flag> getVodFlags() {
+    public List<Flag> getFlags() {
         return vodFlags = vodFlags == null ? new ArrayList<>() : vodFlags;
     }
 
-    public void setVodFlags(List<Flag> vodFlags) {
+    public void setFlags(List<Flag> vodFlags) {
         this.vodFlags = vodFlags;
     }
 
@@ -230,19 +246,19 @@ public class Vod implements Parcelable {
     }
 
     public int getYearVisible() {
-        return getSite() != null || getVodYear().length() < 4 ? View.GONE : View.VISIBLE;
+        return getSite() != null || getYear().length() < 4 ? View.GONE : View.VISIBLE;
     }
 
     public int getNameVisible() {
-        return getVodName().isEmpty() ? View.GONE : View.VISIBLE;
+        return getName().isEmpty() ? View.GONE : View.VISIBLE;
     }
 
     public int getRemarkVisible() {
-        return getVodRemarks().isEmpty() ? View.GONE : View.VISIBLE;
+        return getRemarks().isEmpty() ? View.GONE : View.VISIBLE;
     }
 
     public boolean isFolder() {
-        return "folder".equals(getVodTag()) || getCate() != null;
+        return "folder".equals(getTag()) || getCate() != null;
     }
 
     public boolean isAction() {
@@ -253,18 +269,26 @@ public class Vod implements Parcelable {
         return getStyle() != null ? getStyle() : style != null ? style : Style.rect();
     }
 
-    public String getVodPic(String pic) {
-        if (getVodPic().isEmpty()) setVodPic(pic);
-        return getVodPic();
+    public String getPic(String pic) {
+        if (getPic().isEmpty()) setPic(pic);
+        return getPic();
     }
 
-    public String getVodName(String name) {
-        if (getVodName().isEmpty()) setVodName(name);
-        return getVodName();
+    public String getName(String name) {
+        if (getName().isEmpty()) setName(name);
+        return getName();
     }
 
-    public void trans() {
-        if (Trans.pass()) return;
+    public Vod setFlags() {
+        String[] playUrls = getPlayUrl().split("\\$\\$\\$");
+        String[] playFlags = getPlayFrom().split("\\$\\$\\$");
+        if (!getFlags().isEmpty()) for (Flag item : getFlags()) item.setEpisodes(item.getUrls());
+        else IntStream.range(0, playFlags.length).filter(i -> !playFlags[i].trim().isEmpty() && i < playUrls.length && !TextUtils.isEmpty(playUrls[i])).mapToObj(i -> Flag.create(playFlags[i].trim(), playUrls[i])).forEach(getFlags()::add);
+        return this;
+    }
+
+    public Vod trans() {
+        if (Trans.pass()) return this;
         this.vodName = Trans.s2t(vodName);
         this.vodArea = Trans.s2t(vodArea);
         this.typeName = Trans.s2t(typeName);
@@ -272,29 +296,19 @@ public class Vod implements Parcelable {
         if (vodActor != null) this.vodActor = Sniffer.CLICKER.matcher(vodActor).find() ? vodActor : Trans.s2t(vodActor);
         if (vodContent != null) this.vodContent = Sniffer.CLICKER.matcher(vodContent).find() ? vodContent : Trans.s2t(vodContent);
         if (vodDirector != null) this.vodDirector = Sniffer.CLICKER.matcher(vodDirector).find() ? vodDirector : Trans.s2t(vodDirector);
-    }
-
-    public void setVodFlags() {
-        String[] playFlags = getVodPlayFrom().split("\\$\\$\\$");
-        String[] playUrls = getVodPlayUrl().split("\\$\\$\\$");
-        for (int i = 0; i < playFlags.length; i++) {
-            if (playFlags[i].isEmpty() || i >= playUrls.length) continue;
-            Flag item = Flag.create(playFlags[i].trim());
-            item.createEpisode(playUrls[i]);
-            getVodFlags().add(item);
-        }
-        for (Flag item : getVodFlags()) {
-            if (item.getUrls() == null) continue;
-            item.createEpisode(item.getUrls());
-        }
+        return this;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Vod)) return false;
-        Vod it = (Vod) obj;
-        return getVodId().equals(it.getVodId());
+        if (!(obj instanceof Vod it)) return false;
+        return !getId().isEmpty() && !it.getId().isEmpty() ? getId().equals(it.getId()) : getName().equals(it.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return !getId().isEmpty() ? getId().hashCode() : getName().hashCode();
     }
 
     @Override
@@ -362,4 +376,14 @@ public class Vod implements Parcelable {
             return new Vod[size];
         }
     };
+
+    @Override
+    public boolean isSameItem(Vod other) {
+        return equals(other);
+    }
+
+    @Override
+    public boolean isSameContent(Vod other) {
+        return getName().equals(other.getName()) && getPic().equals(other.getPic()) && getRemarks().equals(other.getRemarks()) && Objects.equals(getSite(), other.getSite());
+    }
 }

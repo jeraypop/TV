@@ -55,7 +55,7 @@ public class ReceiveDialog extends BaseDialog {
         History item = event.getHistory();
         binding.name.setText(item.getVodName());
         binding.from.setText(event.getDevice().getName());
-        ImgUtil.loadVod(item.getVodName(), item.getVodPic(), binding.image);
+        ImgUtil.load(item.getVodName(), item.getVodPic(), binding.image);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ReceiveDialog extends BaseDialog {
 
     private void onReceiveCast() {
         if (VodConfig.get().getConfig().equals(event.getConfig())) {
-            VideoActivity.cast(getActivity(), event.getHistory().update(VodConfig.getCid()));
+            VideoActivity.cast(requireActivity(), event.getHistory().save(VodConfig.getCid()));
             dismiss();
         } else {
             showProgress();

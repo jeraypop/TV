@@ -1,6 +1,8 @@
 package com.fongmi.android.tv.api.loader;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.quickjs.crawler.Loader;
+import com.fongmi.quickjs.utils.Module;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.crawler.SpiderNull;
 
@@ -10,14 +12,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JsLoader {
 
     private final ConcurrentHashMap<String, Spider> spiders;
+    private final Loader loader;
     private String recent;
 
     public JsLoader() {
         spiders = new ConcurrentHashMap<>();
+        loader = new Loader();
     }
 
     public void clear() {
-        for (Spider spider : spiders.values()) App.execute(spider::destroy);
+        spiders.values().forEach(Spider::destroy);
+        Module.get().clear();
         spiders.clear();
     }
 
@@ -26,25 +31,22 @@ public class JsLoader {
     }
 
     public Spider getSpider(String key, String api, String ext, String jar) {
-        try {
-            if (spiders.containsKey(key)) return spiders.get(key);
-            Spider spider = new com.fongmi.quickjs.crawler.Spider(key, api, BaseLoader.get().dex(jar));
-            spider.init(App.get(), ext);
-            spiders.put(key, spider);
-            return spider;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return new SpiderNull();
-        }
+        return spiders.computeIfAbsent(key, k -> {
+            try {
+                Spider spider = loader.spider(api, BaseLoader.get().dex(jar));
+                spider.siteKey = key;
+                spider.init(App.get(), ext);
+                return spider;
+            } catch (Throwable e) {
+                e.printStackTrace();
+                return new SpiderNull();
+            }
+        });
     }
 
-    public Object[] proxyInvoke(Map<String, String> params) {
-        try {
-            if (!params.containsKey("siteKey")) return spiders.get(recent).proxyLocal(params);
-            return BaseLoader.get().getSpider(params).proxyLocal(params);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
+    public Object[] proxy(Map<String, String> params) throws Exception {
+        if (recent == null) return null;
+        Spider spider = spiders.get(recent);
+        return spider != null ? spider.proxy(params) : null;
     }
 }

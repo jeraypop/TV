@@ -11,17 +11,16 @@ import com.github.catvod.utils.Path;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class RestoreAdapter extends RecyclerView.Adapter<RestoreAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<File> mItems;
 
     public RestoreAdapter(OnClickListener listener) {
         this.mItems = new ArrayList<>();
-        this.mListener = listener;
+        this.listener = listener;
         this.addAll();
     }
 
@@ -36,7 +35,7 @@ public class RestoreAdapter extends RecyclerView.Adapter<RestoreAdapter.ViewHold
         File[] files = Path.tv().listFiles();
         if (files == null) files = new File[0];
         for (File file : files) if (file.getName().startsWith("tv") && file.getName().endsWith(".bk.gz")) mItems.add(file);
-        if (!mItems.isEmpty()) Collections.sort(mItems, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+        if (!mItems.isEmpty()) mItems.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
         notifyDataSetChanged();
     }
 
@@ -64,11 +63,11 @@ public class RestoreAdapter extends RecyclerView.Adapter<RestoreAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         File item = mItems.get(position);
         holder.binding.text.setText(item.getName());
-        holder.binding.text.setOnClickListener(v -> mListener.onItemClick(item));
-        holder.binding.delete.setOnClickListener(v -> mListener.onDeleteClick(item));
+        holder.binding.text.setOnClickListener(v -> listener.onItemClick(item));
+        holder.binding.delete.setOnClickListener(v -> listener.onDeleteClick(item));
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterRestoreBinding binding;
 

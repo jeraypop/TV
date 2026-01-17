@@ -12,9 +12,10 @@ import androidx.viewbinding.ViewBinding;
 
 public abstract class BaseFragment extends Fragment {
 
-    protected abstract ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container);
+    private boolean isViewCreated;
+    private boolean isDataLoaded;
 
-    private boolean init;
+    protected abstract ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container);
 
     @Nullable
     @Override
@@ -24,30 +25,37 @@ public abstract class BaseFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        isViewCreated = true;
+        if (getUserVisibleHint()) {
+            lazyLoad();
+            isDataLoaded = true;
+        }
+    }
+
+    private void lazyLoad() {
         initView();
+        initEvent();
     }
 
     protected void initView() {
     }
 
-    protected void initData() {
-    }
-
-    private void onVisible() {
-        if (init) return;
-        initData();
-        init = true;
+    protected void initEvent() {
     }
 
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        if (isVisibleToUser) if (isResumed()) onVisible();
+        if (isVisibleToUser && isViewCreated && !isDataLoaded) {
+            lazyLoad();
+            isDataLoaded = true;
+        }
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        if (getUserVisibleHint()) onVisible();
+    public void onDestroyView() {
+        super.onDestroyView();
+        isViewCreated = false;
+        isDataLoaded = false;
     }
 }

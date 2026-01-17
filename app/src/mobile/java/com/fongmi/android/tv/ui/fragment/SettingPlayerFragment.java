@@ -53,9 +53,11 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.uaText.setText(Setting.getUa());
         mBinding.aacText.setText(getSwitch(Setting.isPreferAAC()));
         mBinding.tunnelText.setText(getSwitch(Setting.isTunnel()));
+        mBinding.adblockText.setText(getSwitch(Setting.isAdblock()));
         mBinding.speedText.setText(format.format(Setting.getSpeed()));
         mBinding.bufferText.setText(String.valueOf(Setting.getBuffer()));
         mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
+        mBinding.videoDecodeText.setText(getSwitch(Setting.isVideoPrefer()));
         mBinding.danmakuLoadText.setText(getSwitch(Setting.isDanmakuLoad()));
         mBinding.caption.setVisibility(Setting.hasCaption() ? View.VISIBLE : View.GONE);
         mBinding.scaleText.setText((scale = ResUtil.getStringArray(R.array.select_scale))[Setting.getScale()]);
@@ -74,9 +76,11 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         mBinding.render.setOnClickListener(this::setRender);
         mBinding.tunnel.setOnClickListener(this::setTunnel);
         mBinding.caption.setOnClickListener(this::setCaption);
+        mBinding.adblock.setOnClickListener(this::setAdblock);
         mBinding.caption.setOnLongClickListener(this::onCaption);
         mBinding.background.setOnClickListener(this::onBackground);
         mBinding.audioDecode.setOnClickListener(this::setAudioDecode);
+        mBinding.videoDecode.setOnClickListener(this::setVideoDecode);
         mBinding.danmakuLoad.setOnClickListener(this::setDanmakuLoad);
     }
 
@@ -96,7 +100,7 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
     }
 
     private void onScale(View view) {
-        new MaterialAlertDialogBuilder(getActivity()).setTitle(R.string.player_scale).setNegativeButton(R.string.dialog_negative, null).setSingleChoiceItems(scale, Setting.getScale(), (dialog, which) -> {
+        new MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.player_scale).setNegativeButton(R.string.dialog_negative, null).setSingleChoiceItems(scale, Setting.getScale(), (dialog, which) -> {
             mBinding.scaleText.setText(scale[which]);
             Setting.putScale(which);
             dialog.dismiss();
@@ -124,10 +128,10 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
     }
 
     private void setRender(View view) {
-        int index = Setting.getRender();
-        Setting.putRender(index = index == render.length - 1 ? 0 : ++index);
+        if (Setting.isTunnel() && Setting.getRender() == 0) setTunnel(view);
+        int index = (Setting.getRender() + 1) % render.length;
         mBinding.renderText.setText(render[index]);
-        if (Setting.isTunnel() && Setting.getRender() == 1) setTunnel(view);
+        Setting.putRender(index);
     }
 
     private void setTunnel(View view) {
@@ -146,8 +150,13 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
         return Setting.isCaption();
     }
 
+    private void setAdblock(View view) {
+        Setting.putAdblock(!Setting.isAdblock());
+        mBinding.adblockText.setText(getSwitch(Setting.isAdblock()));
+    }
+
     private void onBackground(View view) {
-        new MaterialAlertDialogBuilder(getActivity()).setTitle(R.string.player_background).setNegativeButton(R.string.dialog_negative, null).setSingleChoiceItems(background, Setting.getBackground(), (dialog, which) -> {
+        new MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.player_background).setNegativeButton(R.string.dialog_negative, null).setSingleChoiceItems(background, Setting.getBackground(), (dialog, which) -> {
             mBinding.backgroundText.setText(background[which]);
             Setting.putBackground(which);
             dialog.dismiss();
@@ -157,6 +166,11 @@ public class SettingPlayerFragment extends BaseFragment implements UaCallback, B
     private void setAudioDecode(View view) {
         Setting.putAudioPrefer(!Setting.isAudioPrefer());
         mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
+    }
+
+    private void setVideoDecode(View view) {
+        Setting.putVideoPrefer(!Setting.isVideoPrefer());
+        mBinding.videoDecodeText.setText(getSwitch(Setting.isVideoPrefer()));
     }
 
     private void setDanmakuLoad(View view) {

@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/shape_live"
+    android:orientation="vertical">
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:duplicateParentState="true"
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:textColor="@color/epg"
+        android:textColor="@color/live"
         android:textSize="14sp"
         tools:text="七龍珠" />
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:duplicateParentState="true"
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:textColor="@color/epg"
+        android:textColor="@color/live"
         android:textSize="12sp"
         tools:text="18:00 ~ 19:00" />
 
-</LinearLayout>
+</androidx.appcompat.widget.LinearLayoutCompat>

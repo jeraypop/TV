@@ -18,12 +18,12 @@ import java.util.List;
 
 public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Site> mItems;
     private int type;
 
     public SiteAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
         this.addAll();
     }
@@ -85,7 +85,7 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
     }
 
     private void setListener(Site item, int position) {
-        if (type == 0) mListener.onItemClick(item);
+        if (type == 0) listener.onItemClick(item);
         if (type == 1) item.setSearchable(!item.isSearchable()).save();
         if (type == 2) item.setChangeable(!item.isChangeable()).save();
         if (type != 0) notifyItemChanged(position);
@@ -103,7 +103,7 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
         notifyItemRangeChanged(0, getItemCount());
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterSiteBinding binding;
 

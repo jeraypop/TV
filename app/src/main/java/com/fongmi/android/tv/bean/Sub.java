@@ -3,10 +3,12 @@ package com.fongmi.android.tv.bean;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.player.exo.ExoUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.utils.Trans;
@@ -26,10 +28,9 @@ public class Sub {
     private int flag;
 
     public static Sub from(String path) {
-        Uri uri = Uri.parse(path);
         Sub sub = new Sub();
         sub.url = path;
-        sub.name = uri.getLastPathSegment();
+        sub.name = UrlUtil.path(path);
         sub.flag = C.SELECTION_FLAG_FORCED;
         sub.format = ExoUtil.getMimeType(sub.name);
         return sub;
@@ -67,8 +68,13 @@ public class Sub {
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Sub)) return false;
-        Sub it = (Sub) obj;
+        if (!(obj instanceof Sub it)) return false;
         return getUrl().equals(it.getUrl());
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return App.gson().toJson(this);
     }
 }

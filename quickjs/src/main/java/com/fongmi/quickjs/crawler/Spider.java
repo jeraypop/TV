@@ -25,12 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import dalvik.system.DexClassLoader;
-import java9.util.concurrent.CompletableFuture;
 
 public class Spider extends com.github.catvod.crawler.Spider {
 
@@ -38,20 +38,13 @@ public class Spider extends com.github.catvod.crawler.Spider {
     private final DexClassLoader dex;
     private QuickJSContext ctx;
     private JSObject jsObject;
-    private final String key;
     private final String api;
     private boolean cat;
 
-    public Spider(String key, String api, DexClassLoader dex) throws Exception {
+    public Spider(String api, DexClassLoader dex) {
         this.executor = Executors.newSingleThreadExecutor();
-        this.key = key;
         this.api = api;
         this.dex = dex;
-        initializeJS();
-    }
-
-    private void submit(Runnable runnable) {
-        executor.submit(runnable);
     }
 
     private <T> Future<T> submit(Callable<T> callable) {
@@ -64,8 +57,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     @Override
     public void init(Context context, String extend) throws Exception {
-        if (cat) call("init", submit(() -> cfg(extend)).get());
-        else call("init", Json.isObj(extend) ? ctx.parse(extend) : extend);
+        initializeJS();
+        call("init", submit(() -> getExt(extend)).get());
     }
 
     @Override
@@ -121,9 +114,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     @Override
-    public Object[] proxyLocal(Map<String, String> params) throws Exception {
-        if ("catvod".equals(params.get("from"))) return proxy2(params);
-        else return submit(() -> proxy1(params)).get();
+    public Object[] proxy(Map<String, String> params) throws Exception {
+        return "catvod".equals(params.get("from")) ? proxy2(params) : proxy1(params);
     }
 
     @Override
@@ -138,11 +130,21 @@ public class Spider extends com.github.catvod.crawler.Spider {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        submit(() -> {
+        try {
+            releaseJS();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        } finally {
             executor.shutdownNow();
+        }
+    }
+
+    private void releaseJS() throws Exception {
+        submit(() -> {
             jsObject.release();
             ctx.destroy();
-        });
+            return null;
+        }).get();
     }
 
     private void initializeJS() throws Exception {
@@ -177,8 +179,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
             Global.create(ctx, executor);
             Class<?> clz = dex.loadClass("com.github.catvod.js.Function");
             clz.getDeclaredConstructor(QuickJSContext.class).newInstance(ctx);
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable ignored) {
         }
     }
 
@@ -192,18 +193,21 @@ public class Spider extends com.github.catvod.crawler.Spider {
         jsObject = (JSObject) ctx.getProperty(ctx.getGlobalObject(), spider);
     }
 
-    private JSObject cfg(String ext) {
-        JSObject cfg = ctx.createNewJSObject();
-        cfg.setProperty("stype", 3);
-        cfg.setProperty("skey", key);
-        if (!Json.isObj(ext)) cfg.setProperty("ext", ext);
-        else cfg.setProperty("ext", (JSObject) ctx.parse(ext));
-        return cfg;
+    private Object getExt(String ext) {
+        if (!cat) return Json.isObj(ext) ? ctx.parse(ext) : ext;
+        JSObject obj = ctx.createNewJSObject();
+        obj.setProperty("stype", 3);
+        obj.setProperty("skey", siteKey);
+        if (!Json.isObj(ext)) obj.setProperty("ext", ext);
+        else obj.setProperty("ext", (JSObject) ctx.parse(ext));
+        return obj;
     }
 
     private Object[] proxy1(Map<String, String> params) throws Exception {
-        JSObject object = JSUtil.toObject(ctx, params);
-        JSONArray array = new JSONArray(((JSArray) jsObject.getJSFunction("proxy").call(object)).stringify());
+        JSObject obj = submit(() -> JSUtil.toObject(ctx, params)).get();
+        JSArray proxy = (JSArray) call("proxy", obj);
+        String json = submit(proxy::stringify).get();
+        JSONArray array = new JSONArray(json);
         Map<String, String> headers = array.length() > 3 ? Json.toMap(array.optString(3)) : null;
         boolean base64 = array.length() > 4 && array.optInt(4) == 1;
         Object[] result = new Object[4];
@@ -219,8 +223,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
         String header = params.get("header");
         JSArray array = submit(() -> JSUtil.toArray(ctx, Arrays.asList(url.split("/")))).get();
         Object object = submit(() -> ctx.parse(header)).get();
-        String json = (String) call("proxy", array, object);
-        Res res = Res.objectFrom(json);
+        String proxy = (String) call("proxy", array, object);
+        Res res = Res.objectFrom(proxy);
         Object[] result = new Object[3];
         result[0] = res.getCode();
         result[1] = res.getContentType();

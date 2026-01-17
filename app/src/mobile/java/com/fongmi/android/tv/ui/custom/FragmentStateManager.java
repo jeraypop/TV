@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.ui.custom;
 
+import static androidx.fragment.app.FragmentTransaction.TRANSIT_FRAGMENT_OPEN;
+
 import android.view.ViewGroup;
 
 import androidx.fragment.app.Fragment;
@@ -21,15 +23,14 @@ public abstract class FragmentStateManager {
     public abstract Fragment getItem(int position);
 
     public boolean change(int position) {
-        FragmentTransaction ft = fm.beginTransaction();
-        Fragment fragment = fm.findFragmentByTag(getTag(position));
-        if (fragment == null) ft.add(container.getId(), fragment = getItem(position), getTag(position));
-        else ft.show(fragment);
+        String tag = getTag(position);
+        Fragment fragment = fm.findFragmentByTag(tag);
+        fragment = (fragment == null) ? getItem(position) : fragment;
+        FragmentTransaction ft = fm.beginTransaction().setTransition(TRANSIT_FRAGMENT_OPEN);
+        if (fm.findFragmentByTag(tag) == null) ft.add(container.getId(), fragment, tag);
         Fragment current = fm.getPrimaryNavigationFragment();
-        if (current != null) ft.hide(current);
-        ft.setPrimaryNavigationFragment(fragment);
-        ft.setReorderingAllowed(true);
-        ft.commitNowAllowingStateLoss();
+        if (current != null && current != fragment) ft.hide(current);
+        ft.show(fragment).setPrimaryNavigationFragment(fragment).setReorderingAllowed(true).commitNowAllowingStateLoss();
         return true;
     }
 

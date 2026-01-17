@@ -14,11 +14,11 @@ import java.util.List;
 
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
 
-    private final FilterCallback mListener;
+    private final FilterCallback listener;
     private final List<Filter> mItems;
 
     public FilterAdapter(FilterCallback listener, List<Filter> items) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = items;
     }
 
@@ -38,10 +38,10 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         Filter item = mItems.get(position);
         holder.binding.recycler.setHasFixedSize(true);
         holder.binding.recycler.setItemAnimator(null);
-        holder.binding.recycler.setAdapter(new ValueAdapter(mListener, item));
+        holder.binding.recycler.setAdapter(new ValueAdapter(listener, item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterFilterBinding binding;
 

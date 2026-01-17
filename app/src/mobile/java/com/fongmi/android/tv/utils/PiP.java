@@ -31,6 +31,11 @@ public class PiP {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !App.get().getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
     }
 
+    public PiP() {
+        if (noPiP()) return;
+        this.builder = new PictureInPictureParams.Builder();
+    }
+
     @TargetApi(Build.VERSION_CODES.O)
     private RemoteAction buildRemoteAction(Activity activity, @DrawableRes int icon, @StringRes int title, String action) {
         return new RemoteAction(Icon.createWithResource(activity, icon), activity.getString(title), "", ActionReceiver.getPendingIntent(activity, action));
@@ -41,21 +46,12 @@ public class PiP {
         return buildRemoteAction(activity, R.drawable.exo_icon_play, R.string.exo_controls_play_description, ActionEvent.PLAY);
     }
 
-    public PiP() {
-        if (noPiP()) return;
-        this.builder = new PictureInPictureParams.Builder();
-    }
-
-    public boolean isInMode(Activity activity) {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInPictureInPictureMode();
-    }
-
     public void update(Activity activity, View view) {
-        if (noPiP()) return;
-        Rect sourceRectHint = new Rect();
-        view.getGlobalVisibleRect(sourceRectHint);
-        builder.setSourceRectHint(sourceRectHint);
         try {
+            if (noPiP()) return;
+            Rect rect = new Rect();
+            view.getGlobalVisibleRect(rect);
+            builder.setSourceRectHint(rect);
             activity.setPictureInPictureParams(builder.build());
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,12 +59,12 @@ public class PiP {
     }
 
     public void update(Activity activity, boolean play) {
-        if (noPiP()) return;
-        List<RemoteAction> actions = new ArrayList<>();
-        actions.add(buildRemoteAction(activity, R.drawable.exo_icon_previous, R.string.exo_controls_previous_description, ActionEvent.PREV));
-        actions.add(getPlayPauseAction(activity, play));
-        actions.add(buildRemoteAction(activity, R.drawable.exo_icon_next, R.string.exo_controls_next_description, ActionEvent.NEXT));
         try {
+            if (noPiP()) return;
+            List<RemoteAction> actions = new ArrayList<>();
+            actions.add(buildRemoteAction(activity, com.fongmi.android.tv.R.drawable.ic_action_audio, R.string.exo_controls_hide, ActionEvent.AUDIO));
+            actions.add(getPlayPauseAction(activity, play));
+            actions.add(buildRemoteAction(activity, R.drawable.exo_icon_next, R.string.exo_controls_next_description, ActionEvent.NEXT));
             activity.setPictureInPictureParams(builder.setActions(actions).build());
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,6 +85,7 @@ public class PiP {
     }
 
     private Rational getRational(int width, int height) {
+        if (width <= 0 || height <= 0) return new Rational(16, 9);
         Rational limitWide = new Rational(239, 100);
         Rational limitTall = new Rational(100, 239);
         Rational rational = new Rational(width, height);

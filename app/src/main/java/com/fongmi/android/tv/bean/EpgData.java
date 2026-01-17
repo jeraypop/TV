@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Calendar;
@@ -101,11 +102,15 @@ public class EpgData {
         setEndTime(cal.getTimeInMillis());
     }
 
+    public void trans() {
+        if (Trans.pass()) return;
+        this.title = Trans.s2t(title);
+    }
+
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof EpgData)) return false;
-        EpgData it = (EpgData) obj;
+        if (!(obj instanceof EpgData it)) return false;
         return getTitle().equals(it.getTitle()) && getEnd().equals(it.getEnd()) && getStart().equals(it.getStart());
     }
 

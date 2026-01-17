@@ -4,21 +4,24 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.annotation.Nullable;
+
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.gson.HeaderAdapter;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.github.catvod.utils.Json;
+import com.github.catvod.utils.Trans;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonElement;
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 
 public class Channel {
 
@@ -49,7 +52,8 @@ public class Channel {
     @SerializedName("catchup")
     private Catchup catchup;
     @SerializedName("header")
-    private JsonElement header;
+    @JsonAdapter(HeaderAdapter.class)
+    private Map<String, String> header;
     @SerializedName("parse")
     private Integer parse;
     @SerializedName("drm")
@@ -57,8 +61,7 @@ public class Channel {
 
     private boolean selected;
     private Group group;
-    private String url;
-    private String msg;
+    private String show;
     private Epg data;
     private int line;
 
@@ -76,12 +79,6 @@ public class Channel {
 
     public static Channel create(Channel channel) {
         return new Channel().copy(channel);
-    }
-
-    public static Channel error(String msg) {
-        Channel result = new Channel();
-        result.setMsg(msg);
-        return result;
     }
 
     public Channel() {
@@ -129,6 +126,14 @@ public class Channel {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getShow() {
+        return TextUtils.isEmpty(show) ? getName() : show;
+    }
+
+    public void setShow(String show) {
+        this.show = show;
     }
 
     public String getUa() {
@@ -195,11 +200,11 @@ public class Channel {
         this.catchup = catchup;
     }
 
-    public JsonElement getHeader() {
-        return header;
+    public Map<String, String> getHeader() {
+        return header == null ? new HashMap<>() : header;
     }
 
-    public void setHeader(JsonElement header) {
+    public void setHeader(Map<String, String> header) {
         this.header = header;
     }
 
@@ -225,26 +230,6 @@ public class Channel {
 
     public void setGroup(Group group) {
         this.group = group;
-    }
-
-    public String getUrl() {
-        return TextUtils.isEmpty(url) ? "" : url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getMsg() {
-        return TextUtils.isEmpty(msg) ? "" : msg;
-    }
-
-    public void setMsg(String msg) {
-        this.msg = msg;
-    }
-
-    public boolean hasMsg() {
-        return !getMsg().isEmpty();
     }
 
     public Epg getData() {
@@ -280,19 +265,15 @@ public class Channel {
     }
 
     public void loadLogo(ImageView view) {
-        ImgUtil.loadLive(getLogo(), view);
+        ImgUtil.load(getName(), getLogo(), view, false);
     }
 
-    public void addUrls(String... urls) {
-        getUrls().addAll(new ArrayList<>(Arrays.asList(urls)));
-    }
-
-    public void nextLine() {
-        setLine(getLine() < getUrls().size() - 1 ? getLine() + 1 : 0);
-    }
-
-    public void prevLine() {
-        setLine(getLine() > 0 ? getLine() - 1 : getUrls().size() - 1);
+    public void switchLine(boolean next) {
+        List<?> urls = getUrls();
+        if (urls.isEmpty()) return;
+        int size = urls.size();
+        int step = next ? 1 : -1;
+        setLine((getLine() + step + size) % size);
     }
 
     public String getCurrent() {
@@ -332,8 +313,8 @@ public class Channel {
 
     public void live(Live live) {
         if (!live.getUa().isEmpty() && getUa().isEmpty()) setUa(live.getUa());
-        if (live.getHeader() != null && getHeader() == null) setHeader(live.getHeader());
         if (!live.getClick().isEmpty() && getClick().isEmpty()) setClick(live.getClick());
+        if (!live.getHeader().isEmpty() && getHeader().isEmpty()) setHeader(live.getHeader());
         if (!live.getOrigin().isEmpty() && getOrigin().isEmpty()) setOrigin(live.getOrigin());
         if (!live.getCatchup().isEmpty() && getCatchup().isEmpty()) setCatchup(live.getCatchup());
         if (!live.getReferer().isEmpty() && getReferer().isEmpty()) setReferer(live.getReferer());
@@ -342,11 +323,17 @@ public class Channel {
     }
 
     public void setLine(String line) {
-        setLine(getUrls().indexOf(line));
+        for (int i = 0; i < getUrls().size(); i++) {
+            String url = getUrls().get(i);
+            if (url.equals(line) || (url.contains("$") && line.equals(url.split("\\$")[0]))) {
+                setLine(i);
+                break;
+            }
+        }
     }
 
     public Map<String, String> getHeaders() {
-        Map<String, String> headers = Json.toMap(getHeader());
+        Map<String, String> headers = new HashMap<>(getHeader());
         if (!getUa().isEmpty()) headers.put(HttpHeaders.USER_AGENT, getUa());
         if (!getOrigin().isEmpty()) headers.put(HttpHeaders.ORIGIN, getOrigin());
         if (!getReferer().isEmpty()) headers.put(HttpHeaders.REFERER, getReferer());
@@ -366,6 +353,7 @@ public class Channel {
         setTvgId(item.getTvgId());
         setLogo(item.getLogo());
         setName(item.getName());
+        setShow(item.getShow());
         setUrls(item.getUrls());
         setData(item.getData());
         setDrm(item.getDrm());
@@ -376,24 +364,37 @@ public class Channel {
 
     public Result result() {
         Result result = new Result();
+        result.setDrm(getDrm());
+        result.setUrl(getCurrent());
         result.setClick(getClick());
-        result.setUrl(Url.create().add(getUrl()));
-        result.setHeader(Json.toObject(getHeaders()));
+        result.setParse(getParse());
+        result.setFormat(getFormat());
+        result.setHeader(getHeaders());
         return result;
     }
 
+    public Channel trans() {
+        if (Trans.pass()) return this;
+        this.show = Trans.s2t(name);
+        return this;
+    }
+
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Channel)) return false;
-        Channel it = (Channel) obj;
-        if (!getName().isEmpty()) return getName().equals(it.getName());
-        if (!getNumber().isEmpty()) return getNumber().equals(it.getNumber());
-        return getName().equals(it.getName()) && getNumber().equals(it.getNumber());
+        if (!(obj instanceof Channel it)) return false;
+        String name1 = getName(), name2 = it.getName();
+        String number1 = getNumber(), number2 = it.getNumber();
+        if (!name1.isEmpty() && !name2.isEmpty()) return name1.equals(name2);
+        if (!number1.isEmpty() && !number2.isEmpty()) return number1.equals(number2);
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getNumber());
+        String name = getName(), number = getNumber();
+        if (!name.isEmpty()) return name.hashCode();
+        if (!number.isEmpty()) return number.hashCode();
+        return 0;
     }
 }

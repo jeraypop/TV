@@ -3,14 +3,17 @@ package com.fongmi.android.tv.bean;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.gson.HeaderAdapter;
+import com.fongmi.android.tv.impl.Diffable;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
-import com.github.catvod.utils.Json;
 import com.github.catvod.utils.Util;
 import com.google.gson.JsonElement;
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Collections;
@@ -18,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Parse {
+public class Parse implements Diffable<Parse> {
 
     @SerializedName("name")
     private String name;
@@ -34,12 +37,6 @@ public class Parse {
 
     public static Parse objectFrom(JsonElement element) {
         return App.gson().fromJson(element, Parse.class);
-    }
-
-    public static Parse get(String name) {
-        Parse parse = new Parse();
-        parse.setName(name);
-        return parse;
     }
 
     public static Parse get(Integer type, String url) {
@@ -104,24 +101,16 @@ public class Parse {
         this.click = click;
     }
 
-    public Map<String, String> getHeaders() {
-        return Json.toMap(getExt().getHeader());
+    public Map<String, String> getHeader() {
+        return getExt().getHeader();
     }
 
-    public void setHeader(JsonElement header) {
-        if (getExt().getHeader() == null) getExt().setHeader(header);
+    public void setHeader(Map<String, String> header) {
+        if (getHeader().isEmpty()) getExt().setHeader(header);
     }
 
     public boolean isEmpty() {
         return getType() == 0 && getUrl().isEmpty();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Parse)) return false;
-        Parse it = (Parse) obj;
-        return getName().equals(it.getName());
     }
 
     public String extUrl() {
@@ -138,12 +127,35 @@ public class Parse {
         return map;
     }
 
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Parse it)) return false;
+        return getName().equals(it.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    @Override
+    public boolean isSameItem(Parse other) {
+        return equals(other);
+    }
+
+    @Override
+    public boolean isSameContent(Parse other) {
+        return equals(other);
+    }
+
     public static class Ext {
 
         @SerializedName("flag")
         private List<String> flag;
         @SerializedName("header")
-        private JsonElement header;
+        @JsonAdapter(HeaderAdapter.class)
+        private Map<String, String> header;
 
         public void setFlag(List<String> flag) {
             this.flag = flag;
@@ -153,16 +165,16 @@ public class Parse {
             return flag == null ? Collections.emptyList() : flag;
         }
 
-        public JsonElement getHeader() {
-            return header;
+        public Map<String, String> getHeader() {
+            return header == null ? new HashMap<>() : header;
         }
 
-        public void setHeader(JsonElement header) {
+        public void setHeader(Map<String, String> header) {
             this.header = header;
         }
 
         public boolean isEmpty() {
-            return flag == null && header == null;
+            return getFlag().isEmpty() && getHeader().isEmpty();
         }
 
         @NonNull

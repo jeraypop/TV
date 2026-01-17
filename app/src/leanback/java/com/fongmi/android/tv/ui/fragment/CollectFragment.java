@@ -18,10 +18,11 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Collect;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Vod;
-import com.fongmi.android.tv.databinding.FragmentVodBinding;
+import com.fongmi.android.tv.databinding.FragmentTypeBinding;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.ui.activity.VideoActivity;
 import com.fongmi.android.tv.ui.activity.VodActivity;
+import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
 import com.fongmi.android.tv.ui.custom.CustomScroller;
@@ -35,7 +36,7 @@ import java.util.List;
 
 public class CollectFragment extends BaseFragment implements CustomScroller.Callback, VodPresenter.OnClickListener {
 
-    private FragmentVodBinding mBinding;
+    private FragmentTypeBinding mBinding;
     private ArrayObjectAdapter mAdapter;
     private ArrayObjectAdapter mLast;
     private CustomScroller mScroller;
@@ -62,21 +63,22 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
 
     @Override
     protected ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
-        return mBinding = FragmentVodBinding.inflate(inflater, container, false);
+        return mBinding = FragmentTypeBinding.inflate(inflater, container, false);
     }
 
     @Override
     protected void initView() {
         setRecyclerView();
         setViewModel();
+        addVideo(mCollect);
     }
 
     private void setRecyclerView() {
         CustomSelector selector = new CustomSelector();
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16), VodPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
-        mBinding.recycler.setHeader(getActivity().findViewById(R.id.result), getActivity().findViewById(R.id.recycler));
         mBinding.recycler.addOnScrollListener(mScroller = new CustomScroller(this));
+        mBinding.recycler.setHeader(getActivity(), R.id.result, R.id.recycler);
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
     }
 
@@ -88,13 +90,8 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
         });
     }
 
-    @Override
-    protected void initData() {
-        if (mCollect != null) addVideo(mCollect.getList());
-    }
-
     private boolean checkLastSize(List<Vod> items) {
-        if (mLast == null || items.size() == 0) return false;
+        if (mLast == null || items.isEmpty()) return false;
         int size = Product.getColumn() - mLast.size();
         if (size == 0) return false;
         size = Math.min(size, items.size());
@@ -103,12 +100,16 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
         return true;
     }
 
+    private void addVideo(Collect collect) {
+        if (collect != null) addVideo(collect.getList());
+    }
+
     public void addVideo(List<Vod> items) {
         if (checkLastSize(items) || getActivity() == null || getActivity().isFinishing()) return;
         List<ListRow> rows = new ArrayList<>();
         for (List<Vod> part : Lists.partition(items, Product.getColumn())) {
             mLast = new ArrayObjectAdapter(new VodPresenter(this));
-            mLast.setItems(part, null);
+            mLast.setItems(part, new BaseDiffCallback<Vod>());
             rows.add(new ListRow(mLast));
         }
         mAdapter.addAll(mAdapter.size(), rows);
@@ -116,9 +117,9 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
 
     @Override
     public void onItemClick(Vod item) {
-        getActivity().setResult(Activity.RESULT_OK);
-        if (item.isFolder()) VodActivity.start(getActivity(), item.getSiteKey(), Result.folder(item));
-        else VideoActivity.collect(getActivity(), item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic());
+        requireActivity().setResult(Activity.RESULT_OK);
+        if (item.isFolder()) VodActivity.start(requireActivity(), item.getSiteKey(), Result.folder(item));
+        else VideoActivity.collect(requireActivity(), item.getSiteKey(), item.getId(), item.getName(), item.getPic());
     }
 
     @Override
@@ -129,7 +130,7 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
     @Override
     public void onLoadMore(String page) {
         if (mCollect == null || "all".equals(mCollect.getSite().getKey())) return;
-        mViewModel.searchContent(mCollect.getSite(), getKeyword(), page);
+        mViewModel.searchContent(mCollect.getSite(), getKeyword(), false, page);
         mScroller.setLoading(true);
     }
 

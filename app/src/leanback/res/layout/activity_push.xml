@@ -1,33 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black_20"
     android:gravity="center"
-    android:keepScreenOn="true"
     android:orientation="vertical">
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/code"
         android:layout_width="250dp"
         android:layout_height="250dp"
         android:scaleType="fitXY" />
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:gravity="center"
         android:lineSpacingExtra="8dp"
-        android:shadowColor="@color/grey_900"
-        android:shadowDx="2"
-        android:shadowDy="2"
-        android:shadowRadius="1"
         android:textColor="@color/white"
         android:textSize="18sp" />
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/clip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -37,4 +32,4 @@
         android:textColor="@color/white"
         android:textSize="18sp" />
 
-</LinearLayout>
+</androidx.appcompat.widget.LinearLayoutCompat>

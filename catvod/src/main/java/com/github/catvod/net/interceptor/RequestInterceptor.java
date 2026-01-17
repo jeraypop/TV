@@ -2,8 +2,6 @@ package com.github.catvod.net.interceptor;
 
 import androidx.annotation.NonNull;
 
-import com.github.catvod.net.OkCookieJar;
-
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,13 +29,13 @@ public class RequestInterceptor implements Interceptor {
         Request.Builder builder = request.newBuilder();
         HttpUrl url = request.url();
         checkAuth(url, builder);
-        OkCookieJar.sync(url, request);
         return chain.proceed(builder.build());
     }
 
     private void checkAuth(HttpUrl url, Request.Builder builder) {
+        String host = url.host();
         String auth = url.queryParameter("auth");
-        if (auth != null) authMap.put(url.host(), auth);
-        if (authMap.containsKey(url.host()) && auth == null) builder.url(url.newBuilder().addQueryParameter("auth", authMap.get(url.host())).build());
+        if (auth != null) authMap.put(host, auth);
+        else if (authMap.containsKey(host)) builder.url(url.newBuilder().addQueryParameter("auth", authMap.get(host)).build());
     }
 }

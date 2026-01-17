@@ -13,14 +13,12 @@ import com.fongmi.android.tv.databinding.AdapterDeviceBinding;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
+public class DeviceAdapter extends BaseDiffAdapter<Device, DeviceAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
-    private final List<Device> mItems;
+    private final OnClickListener listener;
 
     public DeviceAdapter(OnClickListener listener) {
-        this.mItems = new ArrayList<>();
-        this.mListener = listener;
+        this.listener = listener;
     }
 
     public interface OnClickListener {
@@ -30,35 +28,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         boolean onLongClick(Device item);
     }
 
-    public void addAll(List<Device> items) {
-        if (items == null) return;
-        mItems.removeAll(items);
-        mItems.addAll(items);
-        Device.Sorter.sort(mItems);
-        notifyDataSetChanged();
-    }
-
-    public void remove(Device item) {
-        if (item == null) return;
-        mItems.remove(item);
-        notifyDataSetChanged();
-    }
-
-    public void clear() {
-        mItems.clear();
-        Device.delete();
-        notifyDataSetChanged();
-    }
-
     public List<String> getIps() {
         List<String> ips = new ArrayList<>();
-        for (Device item : mItems) if (item.isApp()) ips.add(item.getIp());
+        for (Device item : getItems()) if (item.isApp()) ips.add(item.getIp());
         return ips;
-    }
-
-    @Override
-    public int getItemCount() {
-        return mItems.size();
     }
 
     @NonNull
@@ -69,19 +42,19 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Device item = mItems.get(position);
+        Device item = getItem(position);
         holder.binding.name.setText(item.getName());
         holder.binding.host.setText(item.getHost());
         holder.binding.type.setImageResource(getIcon(item));
-        holder.binding.getRoot().setOnClickListener(v -> mListener.onItemClick(item));
-        holder.binding.getRoot().setOnLongClickListener(v -> mListener.onLongClick(item));
+        holder.binding.getRoot().setOnClickListener(v -> listener.onItemClick(item));
+        holder.binding.getRoot().setOnLongClickListener(v -> listener.onLongClick(item));
     }
 
     private int getIcon(Device item) {
         return item.isMobile() ? R.drawable.ic_cast_mobile : R.drawable.ic_cast_tv;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterDeviceBinding binding;
 
