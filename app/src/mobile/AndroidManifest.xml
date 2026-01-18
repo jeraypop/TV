@@ -9,7 +9,6 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application>
-
         <activity
             android:name=".ui.activity.HomeActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
@@ -19,7 +18,7 @@
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-               <!-- <category android:name="android.intent.category.LAUNCHER" />-->
+                <!--<category android:name="android.intent.category.LAUNCHER" />-->
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

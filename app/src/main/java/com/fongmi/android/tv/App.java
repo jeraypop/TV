@@ -12,10 +12,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.HandlerCompat;
 
+import com.fongmi.android.tv.adutil.ADType;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
 import com.google.gson.Gson;
+import com.zh.pocket.PocketSdk;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
