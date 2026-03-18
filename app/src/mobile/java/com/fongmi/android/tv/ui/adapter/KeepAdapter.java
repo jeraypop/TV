@@ -11,19 +11,14 @@ import com.fongmi.android.tv.bean.Keep;
 import com.fongmi.android.tv.databinding.AdapterVodBinding;
 import com.fongmi.android.tv.utils.ImgUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+public class KeepAdapter extends BaseDiffAdapter<Keep, KeepAdapter.ViewHolder> {
 
-public class KeepAdapter extends RecyclerView.Adapter<KeepAdapter.ViewHolder> {
-
-    private final OnClickListener mListener;
-    private final List<Keep> mItems;
+    private final OnClickListener listener;
     private int width, height;
     private boolean delete;
 
     public KeepAdapter(OnClickListener listener) {
-        this.mItems = new ArrayList<>();
-        this.mListener = listener;
+        this.listener = listener;
     }
 
     public interface OnClickListener {
@@ -46,32 +41,14 @@ public class KeepAdapter extends RecyclerView.Adapter<KeepAdapter.ViewHolder> {
 
     public void setDelete(boolean delete) {
         this.delete = delete;
-        notifyItemRangeChanged(0, mItems.size());
-    }
-
-    public void addAll(List<Keep> items) {
-        mItems.clear();
-        mItems.addAll(items);
-        notifyDataSetChanged();
-    }
-
-    public void clear() {
-        mItems.clear();
-        setDelete(false);
-        notifyDataSetChanged();
-        Keep.deleteAll();
-    }
-
-    public void remove(Keep item) {
-        int index = mItems.indexOf(item);
-        if (index == -1) return;
-        mItems.remove(index);
-        notifyItemRemoved(index);
+        notifyItemRangeChanged(0, getItemCount());
     }
 
     @Override
-    public int getItemCount() {
-        return mItems.size();
+    public void clear() {
+        super.clear();
+        setDelete(false);
+        Keep.deleteAll();
     }
 
     @NonNull
@@ -79,31 +56,32 @@ public class KeepAdapter extends RecyclerView.Adapter<KeepAdapter.ViewHolder> {
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         ViewHolder holder = new ViewHolder(AdapterVodBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
         holder.binding.getRoot().getLayoutParams().width = width;
-        holder.binding.getRoot().getLayoutParams().height = height;
+        holder.binding.image.getLayoutParams().height = height;
         return holder;
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Keep item = mItems.get(position);
+        Keep item = getItem(position);
         holder.binding.name.setText(item.getVodName());
         holder.binding.remark.setVisibility(View.GONE);
         holder.binding.site.setVisibility(View.VISIBLE);
         holder.binding.site.setText(item.getSiteName());
+        holder.binding.progress.setVisibility(View.GONE);
         holder.binding.delete.setVisibility(!delete ? View.GONE : View.VISIBLE);
-        ImgUtil.loadVod(item.getVodName(), item.getVodPic(), holder.binding.image);
+        ImgUtil.load(item.getVodName(), item.getVodPic(), holder.binding.image);
         setClickListener(holder.binding.getRoot(), item);
     }
 
     private void setClickListener(View root, Keep item) {
-        root.setOnLongClickListener(view -> mListener.onLongClick());
+        root.setOnLongClickListener(view -> listener.onLongClick());
         root.setOnClickListener(view -> {
-            if (isDelete()) mListener.onItemDelete(item);
-            else mListener.onItemClick(item);
+            if (isDelete()) listener.onItemDelete(item);
+            else listener.onItemClick(item);
         });
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterVodBinding binding;
 

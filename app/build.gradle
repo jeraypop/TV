@@ -1,9 +1,6 @@
 plugins {
     id 'com.android.application'
 }
-def keystorePropertiesFile = rootProject.file("Keystore.properties")
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     namespace 'com.fongmi.android.tv'
@@ -12,7 +9,7 @@ android {
     flavorDimensions = ["mode", "abi"]
 
     defaultConfig {
-        applicationId "xiao.ping.qi.hp"
+        applicationId "com.fongmi.android.tv"
         minSdk 21
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
@@ -46,25 +43,12 @@ android {
         buildConfig true
         viewBinding true
     }
-    signingConfigs {
-        debug {
-            storeFile file(keystoreProperties['adstoreFilePath'])
-            storePassword keystoreProperties['adstorePassword']
-            keyAlias keystoreProperties['adkeyAlias']
-            keyPassword keystoreProperties['adkeyPassword']
 
-            v1SigningEnabled true
-            v2SigningEnabled true
-            enableV3Signing = true
-            enableV4Signing = true
-        }
-    }
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
         }
     }
 

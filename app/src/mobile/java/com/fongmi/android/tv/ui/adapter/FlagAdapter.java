@@ -16,11 +16,11 @@ import java.util.List;
 
 public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Flag> mItems;
 
     public FlagAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
     }
 
@@ -35,6 +35,11 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
+    public void add(Flag item) {
+        mItems.add(item);
+        notifyItemInserted(mItems.size() - 1);
+    }
+
     public int getPosition() {
         for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isActivated()) return i;
         return 0;
@@ -42,6 +47,10 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
 
     public Flag get(int position) {
         return mItems.get(position);
+    }
+
+    public List<Flag> getItems() {
+        return mItems;
     }
 
     public Flag getActivated() {
@@ -82,10 +91,10 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
         Flag item = mItems.get(position);
         holder.binding.text.setText(item.getShow());
         holder.binding.text.setActivated(item.isActivated());
-        holder.binding.text.setOnClickListener(v -> mListener.onItemClick(item));
+        holder.binding.text.setOnClickListener(v -> listener.onItemClick(item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterFlagBinding binding;
 

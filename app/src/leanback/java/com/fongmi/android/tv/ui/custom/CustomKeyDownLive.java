@@ -9,16 +9,14 @@ import androidx.annotation.NonNull;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
-import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.utils.KeyUtil;
-import com.fongmi.android.tv.utils.ResUtil;
 
 public class CustomKeyDownLive extends GestureDetector.SimpleOnGestureListener {
 
     private final GestureDetector detector;
     private final StringBuilder text;
     private final Listener listener;
-    private int holdTime;
+    private long holdTime;
 
     private final Runnable runnable = new Runnable() {
         @Override
@@ -51,23 +49,21 @@ public class CustomKeyDownLive extends GestureDetector.SimpleOnGestureListener {
     }
 
     private void check(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN && KeyUtil.isLeftKey(event)) {
+        if (KeyUtil.isActionDown(event) && KeyUtil.isLeftKey(event)) {
             listener.onSeeking(subTime());
-        } else if (event.getAction() == KeyEvent.ACTION_DOWN && KeyUtil.isRightKey(event)) {
+        } else if (KeyUtil.isActionDown(event) && KeyUtil.isRightKey(event)) {
             listener.onSeeking(addTime());
-        } else if (event.getAction() == KeyEvent.ACTION_DOWN && KeyUtil.isUpKey(event)) {
-            if (Setting.isInvert()) listener.onKeyDown();
-            else listener.onKeyUp();
-        } else if (event.getAction() == KeyEvent.ACTION_DOWN && KeyUtil.isDownKey(event)) {
-            if (Setting.isInvert()) listener.onKeyUp();
-            else listener.onKeyDown();
-        } else if (event.getAction() == KeyEvent.ACTION_UP && KeyUtil.isLeftKey(event)) {
+        } else if (KeyUtil.isActionDown(event) && KeyUtil.isUpKey(event)) {
+            listener.onKeyUp();
+        } else if (KeyUtil.isActionDown(event) && KeyUtil.isDownKey(event)) {
+            listener.onKeyDown();
+        } else if (KeyUtil.isActionUp(event) && KeyUtil.isLeftKey(event)) {
             listener.onKeyLeft(holdTime);
-        } else if (event.getAction() == KeyEvent.ACTION_UP && KeyUtil.isRightKey(event)) {
+        } else if (KeyUtil.isActionUp(event) && KeyUtil.isRightKey(event)) {
             listener.onKeyRight(holdTime);
-        } else if (event.getAction() == KeyEvent.ACTION_UP && KeyUtil.isDigitKey(event)) {
+        } else if (KeyUtil.isActionUp(event) && KeyUtil.isDigitKey(event)) {
             onKeyDown(event.getKeyCode());
-        } else if (event.getAction() == KeyEvent.ACTION_UP && KeyUtil.isEnterKey(event)) {
+        } else if (KeyUtil.isActionUp(event) && KeyUtil.isEnterKey(event)) {
             listener.onKeyCenter();
         } else if (KeyUtil.isMenuKey(event) || event.isLongPress() && KeyUtil.isEnterKey(event)) {
             listener.onMenu();
@@ -89,10 +85,7 @@ public class CustomKeyDownLive extends GestureDetector.SimpleOnGestureListener {
 
     @Override
     public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-        if (!listener.dispatch(false)) return true;
-        int half = ResUtil.getScreenWidth() / 2;
-        if (e.getX() > half) listener.onDoubleTap();
-        else listener.onSingleTap();
+        if (listener.dispatch(false)) listener.onSingleTap();
         return true;
     }
 
@@ -100,15 +93,15 @@ public class CustomKeyDownLive extends GestureDetector.SimpleOnGestureListener {
         return keyCode >= 144 ? keyCode - 144 : keyCode - 7;
     }
 
-    private int addTime() {
+    private long addTime() {
         return holdTime = holdTime + Constant.INTERVAL_SEEK;
     }
 
-    private int subTime() {
+    private long subTime() {
         return holdTime = holdTime - Constant.INTERVAL_SEEK;
     }
 
-    public void resetTime() {
+    public void reset() {
         holdTime = 0;
     }
 
@@ -120,15 +113,15 @@ public class CustomKeyDownLive extends GestureDetector.SimpleOnGestureListener {
 
         void onFind(String number);
 
-        void onSeeking(int time);
+        void onSeeking(long time);
 
         void onKeyUp();
 
         void onKeyDown();
 
-        void onKeyLeft(int time);
+        void onKeyLeft(long time);
 
-        void onKeyRight(int time);
+        void onKeyRight(long time);
 
         void onKeyCenter();
 

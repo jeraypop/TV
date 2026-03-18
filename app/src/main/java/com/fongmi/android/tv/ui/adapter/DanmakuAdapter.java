@@ -15,11 +15,11 @@ import java.util.List;
 
 public class DanmakuAdapter extends RecyclerView.Adapter<DanmakuAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Danmaku> mItems;
 
     public DanmakuAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
     }
 
@@ -70,7 +70,7 @@ public class DanmakuAdapter extends RecyclerView.Adapter<DanmakuAdapter.ViewHold
 
         @Override
         public void onClick(View view) {
-            mListener.onItemClick(mItems.get(getLayoutPosition()));
+            listener.onItemClick(mItems.get(getLayoutPosition()));
         }
     }
 }

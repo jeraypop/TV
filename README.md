@@ -99,6 +99,13 @@ https://github.com/CatVodTVOfficial/CatVodTVJarLoader
 
 ### API
 
+播放控制
+
+type 包含 stop、prev、next、loop、play、pause、replay
+```
+http://127.0.0.1:9978/action?do=control&type=next
+```
+
 刷新詳情
 
 ```
@@ -149,21 +156,38 @@ http://127.0.0.1:9978/cache?do=del&key=xxx
 
 ### Proxy
 
-scheme 支持 http, https, socks4, socks5
+支持 http, https, socks4, socks5
 
 ```
 scheme://username:password@host:port
 ```
 
-配置新增 proxy 判斷域名是否走代理  
-全局只需要加上一條規則 ".*."
+配置新增 proxy 可指定代理
+靠前的 host 匹配到則使用該代理
 
 ```json
 {
   "spider": "",
   "proxy": [
-    "raw.githubusercontent.com",
-    "googlevideo.com"
+    {
+      "name": "自訂",
+      "hosts": [
+        "googlevideo.com",
+        "raw.githubusercontent.com"
+      ],
+      "urls": [
+        "http://127.0.0.1:7890"
+      ]
+    },
+    {
+      "name": "全局",
+      "hosts": [
+        ".*."
+      ],
+      "urls": [
+        "socks5://127.0.0.1:7891"
+      ]
+    }
   ]
 }
 ```
@@ -196,12 +220,41 @@ scheme://username:password@host:port
 }
 ```
 
+### 爬蟲本地代理
+
+Java
+
+```
+proxy://
+```
+
+```
+Proxy.getUrl(boolean local)
+```
+
+Python
+
+```
+proxy://do=py
+```
+
+```
+getProxyUrl(boolean local)
+```
+
+JS
+
+```
+proxy://do=js
+```
+
+```
+getProxy(boolean local)
+```
+
 ### 配置範例
 
-[點播-線上](other/sample/vod/online.json)  
-[點播-本地](other/sample/vod/offline.json)  
-[直播-線上](other/sample/live/online.json)  
-[直播-本地](other/sample/live/offline.json)
+[本地/線上](other/sample/config.json)
 
 ### 飛機群
 

@@ -28,7 +28,6 @@ import com.github.catvod.utils.Path;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -36,7 +35,7 @@ import java.util.Locale;
 @Database(entities = {Keep.class, Site.class, Live.class, Track.class, Config.class, Device.class, History.class}, version = AppDatabase.VERSION)
 public abstract class AppDatabase extends RoomDatabase {
 
-    public static final int VERSION = 33;
+    public static final int VERSION = 35;
     public static final String NAME = "tv";
     public static final String SYMBOL = "@@@";
 
@@ -86,7 +85,7 @@ public abstract class AppDatabase extends RoomDatabase {
         File[] files = Path.tv().listFiles();
         if (files == null) files = new File[0];
         for (File file : files) if (file.getName().startsWith("tv") && file.getName().endsWith(".bk.gz")) items.add(file);
-        if (!items.isEmpty()) Collections.sort(items, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+        if (!items.isEmpty()) items.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
         if (items.size() > 7) for (int i = 7; i < items.size(); i++) Path.clear(items.get(i));
     }
 
@@ -95,7 +94,10 @@ public abstract class AppDatabase extends RoomDatabase {
                 .addMigrations(Migrations.MIGRATION_30_31)
                 .addMigrations(Migrations.MIGRATION_31_32)
                 .addMigrations(Migrations.MIGRATION_32_33)
-                .allowMainThreadQueries().fallbackToDestructiveMigration().build();
+                .addMigrations(Migrations.MIGRATION_33_34)
+                .addMigrations(Migrations.MIGRATION_34_35)
+                .fallbackToDestructiveMigration(true)
+                .allowMainThreadQueries().build();
     }
 
     public abstract KeepDao getKeepDao();

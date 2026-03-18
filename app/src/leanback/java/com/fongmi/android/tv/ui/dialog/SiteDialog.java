@@ -22,11 +22,13 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class SiteDialog implements SiteAdapter.OnClickListener {
 
-    private RecyclerView.ItemDecoration decoration;
     private final DialogSiteBinding binding;
-    private final SiteCallback callback;
     private final SiteAdapter adapter;
     private final AlertDialog dialog;
+    private final int GRID_COUNT = 10;
+
+    private RecyclerView.ItemDecoration decoration;
+    private SiteCallback callback;
     private int type;
 
     public static SiteDialog create(Activity activity) {
@@ -35,9 +37,9 @@ public class SiteDialog implements SiteAdapter.OnClickListener {
 
     public SiteDialog(Activity activity) {
         this.adapter = new SiteAdapter(this);
-        this.callback = (SiteCallback) activity;
         this.binding = DialogSiteBinding.inflate(LayoutInflater.from(activity));
         this.dialog = new MaterialAlertDialogBuilder(activity).setView(binding.getRoot()).create();
+        if (activity instanceof SiteCallback) this.callback = (SiteCallback) activity;
     }
 
     public SiteDialog search() {
@@ -57,11 +59,11 @@ public class SiteDialog implements SiteAdapter.OnClickListener {
     }
 
     private boolean list() {
-        return Setting.getSiteMode() == 0 || adapter.getItemCount() < 20;
+        return Setting.getSiteMode() == 0 || adapter.getItemCount() < GRID_COUNT;
     }
 
     private int getCount() {
-        return list() ? 1 : Math.max(2, Math.min((int) (Math.ceil(adapter.getItemCount() / 20.0f)), 3));
+        return list() ? 1 : Math.max(2, Math.min((int) Math.ceil((double) adapter.getItemCount() / GRID_COUNT), 3));
     }
 
     private int getIcon() {
@@ -106,8 +108,8 @@ public class SiteDialog implements SiteAdapter.OnClickListener {
     }
 
     private void setMode() {
-        if (adapter.getItemCount() < 20) Setting.putSiteMode(0);
-        binding.mode.setEnabled(adapter.getItemCount() >= 20);
+        if (adapter.getItemCount() < GRID_COUNT) Setting.putSiteMode(0);
+        binding.mode.setEnabled(adapter.getItemCount() >= GRID_COUNT);
         binding.mode.setImageResource(getIcon());
     }
 
@@ -126,6 +128,7 @@ public class SiteDialog implements SiteAdapter.OnClickListener {
 
     @Override
     public void onItemClick(Site item) {
+        if (callback == null) return;
         callback.setSite(item);
         dialog.dismiss();
     }

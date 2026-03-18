@@ -3,6 +3,7 @@ package com.fongmi.android.tv.bean;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.Index;
@@ -11,17 +12,18 @@ import androidx.room.PrimaryKey;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Product;
 import com.fongmi.android.tv.db.AppDatabase;
+import com.fongmi.android.tv.impl.Diffable;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.google.gson.annotations.SerializedName;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Entity(indices = @Index(value = {"uuid", "name"}, unique = true))
-public class Device {
+public class Device implements Diffable<Device>, Comparable<Device> {
 
     @PrimaryKey(autoGenerate = true)
     @SerializedName("id")
@@ -163,11 +165,15 @@ public class Device {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Device)) return false;
-        Device it = (Device) obj;
-        return getUuid().equals(it.getUuid()) && getName().equals(it.getName());
+        if (!(obj instanceof Device it)) return false;
+        return Objects.equals(getUuid(), it.getUuid());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getUuid());
     }
 
     @NonNull
@@ -176,16 +182,18 @@ public class Device {
         return App.gson().toJson(this);
     }
 
-    public static class Sorter implements Comparator<Device> {
+    @Override
+    public boolean isSameItem(Device other) {
+        return equals(other);
+    }
 
-        public static void sort(List<Device> items) {
-            if (items.size() > 1) Collections.sort(items, new Sorter());
-        }
+    @Override
+    public boolean isSameContent(Device other) {
+        return getName().equals(other.getName()) && getType() == other.getType();
+    }
 
-        @Override
-        public int compare(Device o1, Device o2) {
-            int comp = Integer.compare(o1.getType(), o2.getType());
-            return comp != 0 ? comp : o1.getName().compareTo(o2.getName());
-        }
+    @Override
+    public int compareTo(Device other) {
+        return Comparator.comparingInt(Device::getType).thenComparing(Device::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(Device::getUuid).compare(this, other);
     }
 }

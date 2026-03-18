@@ -2,9 +2,10 @@ package com.fongmi.android.tv;
 
 
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.provider.Settings;
 
-import com.fongmi.android.tv.player.Players;
 import com.github.catvod.utils.Prefers;
 
 public class Setting {
@@ -15,14 +16,6 @@ public class Setting {
 
     public static void putDoh(String doh) {
         Prefers.put("doh", doh);
-    }
-
-    public static String getProxy() {
-        return Prefers.getString("proxy");
-    }
-
-    public static void putProxy(String proxy) {
-        Prefers.put("proxy", proxy);
     }
 
     public static String getKeyword() {
@@ -57,20 +50,20 @@ public class Setting {
         Prefers.put("wall", wall);
     }
 
+    public static int getWallType() {
+        return Prefers.getInt("wall_type", 0);
+    }
+
+    public static void putWallType(int type) {
+        Prefers.put("wall_type", type);
+    }
+
     public static int getReset() {
         return Prefers.getInt("reset", 0);
     }
 
     public static void putReset(int reset) {
         Prefers.put("reset", reset);
-    }
-
-    public static int getDecode() {
-        return Prefers.getInt("decode", Players.HARD);
-    }
-
-    public static void putDecode(int decode) {
-        Prefers.put("decode", decode);
     }
 
     public static int getRender() {
@@ -81,28 +74,12 @@ public class Setting {
         Prefers.put("render", render);
     }
 
-    public static int getQuality() {
-        return Prefers.getInt("quality", 2);
-    }
-
-    public static void putQuality(int quality) {
-        Prefers.put("quality", quality);
-    }
-
     public static int getSize() {
         return Prefers.getInt("size", 2);
     }
 
     public static void putSize(int size) {
         Prefers.put("size", size);
-    }
-
-    public static int getViewType(int viewType) {
-        return Prefers.getInt("viewType", viewType);
-    }
-
-    public static void putViewType(int viewType) {
-        Prefers.put("viewType", viewType);
     }
 
     public static int getScale() {
@@ -135,14 +112,6 @@ public class Setting {
 
     public static void putBackground(int background) {
         Prefers.put("background", background);
-    }
-
-    public static int getRtsp() {
-        return Prefers.getInt("rtsp");
-    }
-
-    public static void putRtsp(int rtsp) {
-        Prefers.put("rtsp", rtsp);
     }
 
     public static int getSiteMode() {
@@ -217,14 +186,6 @@ public class Setting {
         Prefers.put("caption", caption);
     }
 
-    public static boolean isLibAss() {
-        return Prefers.getBoolean("libass");
-    }
-
-    public static void putLibAss(boolean libass) {
-        Prefers.put("libass", libass);
-    }
-
     public static boolean isTunnel() {
         return Prefers.getBoolean("tunnel");
     }
@@ -241,12 +202,36 @@ public class Setting {
         Prefers.put("audio_prefer", audioPrefer);
     }
 
+    public static boolean isVideoPrefer() {
+        return Prefers.getBoolean("video_prefer");
+    }
+
+    public static void putVideoPrefer(boolean videoPrefer) {
+        Prefers.put("video_prefer", videoPrefer);
+    }
+
+    public static boolean isPreferAAC() {
+        return Prefers.getBoolean("prefer_aac");
+    }
+
+    public static void putPreferAAC(boolean preferAAC) {
+        Prefers.put("prefer_aac", preferAAC);
+    }
+
     public static boolean isDanmakuLoad() {
         return Prefers.getBoolean("danmaku_load");
     }
 
     public static void putDanmakuLoad(boolean danmakuLoad) {
         Prefers.put("danmaku_load", danmakuLoad);
+    }
+
+    public static boolean isAdblock() {
+        return Prefers.getBoolean("adblock", true);
+    }
+
+    public static void putAdblock(boolean adblock) {
+        Prefers.put("adblock", adblock);
     }
 
     public static boolean isDanmakuShow() {
@@ -289,10 +274,6 @@ public class Setting {
         Prefers.put("subtitle_position", value);
     }
 
-    public static float getThumbnail() {
-        return 0.3f * getQuality() + 0.4f;
-    }
-
     public static boolean isBackgroundOff() {
         return getBackground() == 0;
     }
@@ -307,5 +288,9 @@ public class Setting {
 
     public static boolean hasCaption() {
         return new Intent(Settings.ACTION_CAPTIONING_SETTINGS).resolveActivity(App.get().getPackageManager()) != null;
+    }
+
+    public static boolean hasFileManager() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && (new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + App.get().getPackageName())).resolveActivity(App.get().getPackageManager()) != null || new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION).resolveActivity(App.get().getPackageManager()) != null);
     }
 }

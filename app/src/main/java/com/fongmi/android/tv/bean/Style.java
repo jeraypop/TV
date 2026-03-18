@@ -30,9 +30,6 @@ public class Style implements Parcelable {
         return null;
     }
 
-    public Style() {
-    }
-
     public Style(String type) {
         this.type = type;
     }
@@ -67,21 +64,17 @@ public class Style implements Parcelable {
     }
 
     public int getViewType() {
-        switch (getType()) {
-            case "oval":
-                return ViewType.OVAL;
-            case "list":
-                return ViewType.LIST;
-            default:
-                return ViewType.RECT;
-        }
+        return switch (getType()) {
+            case "oval" -> ViewType.OVAL;
+            case "list" -> ViewType.LIST;
+            default -> ViewType.RECT;
+        };
     }
 
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Style)) return false;
-        Style it = (Style) obj;
+        if (!(obj instanceof Style it)) return false;
         return getType().equals(it.getType()) && getRatio() == it.getRatio();
     }
 

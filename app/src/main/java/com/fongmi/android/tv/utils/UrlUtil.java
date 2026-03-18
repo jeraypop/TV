@@ -30,8 +30,12 @@ public class UrlUtil {
         return host == null ? "" : host.toLowerCase().trim();
     }
 
+    public static String path(String url) {
+        return url == null ? "" : path(Uri.parse(url));
+    }
+
     public static String path(Uri uri) {
-        String path = uri.getPath();
+        String path = uri.getLastPathSegment();
         return path == null ? "" : path.trim();
     }
 
@@ -41,11 +45,18 @@ public class UrlUtil {
 
     public static String convert(String url) {
         String scheme = scheme(url);
-        if ("local".equals(scheme)) return url.replace("local://", Server.get().getAddress("/"));
-        if ("assets".equals(scheme)) return url.replace("assets://", Server.get().getAddress("/"));
-        if ("file".equals(scheme)) return url.replace("file://", Server.get().getAddress("/file/"));
-        if ("proxy".equals(scheme)) return url.replace("proxy://", Server.get().getAddress("/proxy?"));
-        return url;
+        String path = null;
+        if ("assets".equals(scheme)) path = "/";
+        else if ("file".equals(scheme)) path = "/file/";
+        else if ("proxy".equals(scheme)) path = "/proxy?";
+        return path != null ? url.replace(scheme + "://", Server.get().getAddress(path)) : url;
+    }
+
+    public static String getName(String url) {
+        Uri uri = Uri.parse(url);
+        String path = path(uri);
+        String host = host(uri);
+        return !path.isEmpty() ? path : !host.isEmpty() ? host : url;
     }
 
     public static String fixHeader(String key) {

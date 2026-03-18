@@ -12,11 +12,11 @@ import com.fongmi.android.tv.databinding.AdapterFlagBinding;
 
 public class FlagPresenter extends Presenter {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private int nextFocusDown;
 
     public FlagPresenter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.nextFocusDown = R.id.episode;
     }
 
@@ -28,23 +28,24 @@ public class FlagPresenter extends Presenter {
         this.nextFocusDown = nextFocusDown;
     }
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterFlagBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         Flag item = (Flag) object;
         ViewHolder holder = (ViewHolder) viewHolder;
         holder.binding.text.setText(item.getShow());
         holder.binding.text.setActivated(item.isActivated());
         holder.binding.text.setNextFocusDownId(nextFocusDown);
-        setOnClickListener(holder, view -> mListener.onItemClick(item));
+        setOnClickListener(holder, view -> listener.onItemClick(item));
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

@@ -28,7 +28,6 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
     private String[] caption;
     private String[] render;
     private String[] scale;
-    private String[] rtsp;
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingPlayerActivity.class));
@@ -49,13 +48,15 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
         format = new DecimalFormat("0.#");
         mBinding.render.requestFocus();
         mBinding.uaText.setText(Setting.getUa());
+        mBinding.aacText.setText(getSwitch(Setting.isPreferAAC()));
         mBinding.tunnelText.setText(getSwitch(Setting.isTunnel()));
+        mBinding.adblockText.setText(getSwitch(Setting.isAdblock()));
         mBinding.speedText.setText(format.format(Setting.getSpeed()));
         mBinding.bufferText.setText(String.valueOf(Setting.getBuffer()));
         mBinding.backgroundText.setText(getSwitch(Setting.isBackgroundOn()));
         mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
+        mBinding.videoDecodeText.setText(getSwitch(Setting.isVideoPrefer()));
         mBinding.danmakuLoadText.setText(getSwitch(Setting.isDanmakuLoad()));
-        mBinding.rtspText.setText((rtsp = ResUtil.getStringArray(R.array.select_rtsp))[Setting.getRtsp()]);
         mBinding.scaleText.setText((scale = ResUtil.getStringArray(R.array.select_scale))[Setting.getScale()]);
         mBinding.renderText.setText((render = ResUtil.getStringArray(R.array.select_render))[Setting.getRender()]);
         mBinding.captionText.setText((caption = ResUtil.getStringArray(R.array.select_caption))[Setting.isCaption() ? 1 : 0]);
@@ -64,16 +65,18 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
     @Override
     protected void initEvent() {
         mBinding.ua.setOnClickListener(this::onUa);
-        mBinding.rtsp.setOnClickListener(this::setRtsp);
+        mBinding.aac.setOnClickListener(this::setAAC);
         mBinding.scale.setOnClickListener(this::setScale);
         mBinding.speed.setOnClickListener(this::onSpeed);
         mBinding.buffer.setOnClickListener(this::onBuffer);
         mBinding.render.setOnClickListener(this::setRender);
         mBinding.tunnel.setOnClickListener(this::setTunnel);
         mBinding.caption.setOnClickListener(this::setCaption);
+        mBinding.adblock.setOnClickListener(this::setAdblock);
         mBinding.caption.setOnLongClickListener(this::onCaption);
         mBinding.background.setOnClickListener(this::onBackground);
         mBinding.audioDecode.setOnClickListener(this::setAudioDecode);
+        mBinding.videoDecode.setOnClickListener(this::setVideoDecode);
         mBinding.danmakuLoad.setOnClickListener(this::setDanmakuLoad);
     }
 
@@ -92,16 +95,15 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
         Setting.putUa(ua);
     }
 
-    private void setRtsp(View view) {
-        int index = Setting.getRtsp();
-        Setting.putRtsp(index = index == rtsp.length - 1 ? 0 : ++index);
-        mBinding.rtspText.setText(rtsp[index]);
+    private void setAAC(View view) {
+        Setting.putPreferAAC(!Setting.isPreferAAC());
+        mBinding.aacText.setText(getSwitch(Setting.isPreferAAC()));
     }
 
     private void setScale(View view) {
-        int index = Setting.getScale();
-        Setting.putScale(index = index == scale.length - 1 ? 0 : ++index);
+        int index = (Setting.getScale() + 1) % scale.length;
         mBinding.scaleText.setText(scale[index]);
+        Setting.putScale(index);
     }
 
     private void onSpeed(View view) {
@@ -125,10 +127,10 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
     }
 
     private void setRender(View view) {
-        int index = Setting.getRender();
-        Setting.putRender(index = index == render.length - 1 ? 0 : ++index);
+        if (Setting.isTunnel() && Setting.getRender() == 0) setTunnel(view);
+        int index = (Setting.getRender() + 1) % render.length;
         mBinding.renderText.setText(render[index]);
-        if (Setting.isTunnel() && Setting.getRender() == 1) setTunnel(view);
+        Setting.putRender(index);
     }
 
     private void setTunnel(View view) {
@@ -142,6 +144,11 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
         mBinding.captionText.setText(caption[Setting.isCaption() ? 1 : 0]);
     }
 
+    private void setAdblock(View view) {
+        Setting.putAdblock(!Setting.isAdblock());
+        mBinding.adblockText.setText(getSwitch(Setting.isAdblock()));
+    }
+
     private boolean onCaption(View view) {
         if (Setting.isCaption()) startActivity(new Intent(Settings.ACTION_CAPTIONING_SETTINGS));
         return Setting.isCaption();
@@ -150,6 +157,11 @@ public class SettingPlayerActivity extends BaseActivity implements UaCallback, B
     private void setAudioDecode(View view) {
         Setting.putAudioPrefer(!Setting.isAudioPrefer());
         mBinding.audioDecodeText.setText(getSwitch(Setting.isAudioPrefer()));
+    }
+
+    private void setVideoDecode(View view) {
+        Setting.putVideoPrefer(!Setting.isVideoPrefer());
+        mBinding.videoDecodeText.setText(getSwitch(Setting.isVideoPrefer()));
     }
 
     private void setDanmakuLoad(View view) {

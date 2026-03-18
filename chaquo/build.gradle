@@ -6,26 +6,24 @@ plugins {
 android {
     namespace 'com.fongmi.chaquo'
 
-    compileSdk 35
-    flavorDimensions = ["abi"]
+    compileSdk {
+        version = release(36) {
+            it.minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
-        minSdk 21
-        targetSdk 28
+        minSdk 24
+        targetSdk 36
         python {
-            version "3.8"
+            version "3.10"
             pip {
-                install "lxml"
-                install "ujson"
-                install "pyquery"
-                install "requests"
-                install "jsonpath"
-                install "cachetools"
-                install 'pycryptodome'
-                install 'beautifulsoup4'
+                install("-r", "requirements.txt")
             }
         }
     }
+
+    flavorDimensions = ["abi"]
 
     productFlavors {
         arm64_v8a {
@@ -45,8 +43,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 

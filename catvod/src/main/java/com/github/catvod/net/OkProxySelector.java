@@ -1,68 +1,54 @@
 package com.github.catvod.net;
 
-import android.net.Uri;
-
+import com.github.catvod.bean.Proxy;
 import com.github.catvod.utils.Util;
 
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OkProxySelector extends ProxySelector {
 
-    private final List<String> hosts;
-    private Proxy proxy;
+    private final List<Proxy> proxy;
+    private final ProxySelector system;
 
     public OkProxySelector() {
-        this.hosts = new ArrayList<>();
+        proxy = new CopyOnWriteArrayList<>();
+        system = ProxySelector.getDefault();
     }
 
-    public synchronized void addAll(List<String> hosts) {
-        this.hosts.addAll(hosts);
+    public synchronized void addAll(List<Proxy> items) {
+        items.forEach(Proxy::init);
+        List<Proxy> newList = Stream.concat(proxy.stream(), items.stream()).sorted().toList();
+        proxy.clear();
+        proxy.addAll(newList);
     }
 
     public void clear() {
-        this.hosts.clear();
+        proxy.clear();
     }
 
-    public void setProxy(String proxy) {
-        this.proxy = getProxy(proxy);
+    private List<java.net.Proxy> fallback(URI uri) {
+        return system != null ? system.select(uri) : List.of(java.net.Proxy.NO_PROXY);
     }
 
     @Override
-    public List<Proxy> select(URI uri) {
-        if (proxy == null || hosts.isEmpty() || uri.getHost() == null || "127.0.0.1".equals(uri.getHost())) return List.of(Proxy.NO_PROXY);
-        for (String host : hosts) if (Util.containOrMatch(uri.getHost(), host)) return List.of(proxy);
-        return List.of(Proxy.NO_PROXY);
+    public List<java.net.Proxy> select(URI uri) {
+        if (proxy.isEmpty() || uri.getHost() == null || "127.0.0.1".equals(uri.getHost())) return fallback(uri);
+        for (Proxy item : proxy) for (String host : item.getHosts()) if (Util.containOrMatch(uri.getHost(), host)) return !item.getProxies().isEmpty() ? item.getProxies() : fallback(uri);
+        return fallback(uri);
     }
 
     @Override
     public void connectFailed(URI uri, SocketAddress socketAddress, IOException e) {
-    }
-
-    private Proxy getProxy(String proxy) {
-        Uri uri = Uri.parse(proxy);
-        String userInfo = uri.getUserInfo();
-        if (userInfo != null && userInfo.contains(":")) setAuthenticator(userInfo);
-        if (uri.getScheme() == null || uri.getHost() == null || uri.getPort() <= 0) return Proxy.NO_PROXY;
-        if (uri.getScheme().startsWith("http")) return new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(uri.getHost(), uri.getPort()));
-        if (uri.getScheme().startsWith("socks")) return new Proxy(Proxy.Type.SOCKS, InetSocketAddress.createUnresolved(uri.getHost(), uri.getPort()));
-        return Proxy.NO_PROXY;
-    }
-
-    private void setAuthenticator(String userInfo) {
-        Authenticator.setDefault(new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(userInfo.split(":")[0], userInfo.split(":")[1].toCharArray());
-            }
-        });
+        if (system != null) system.connectFailed(uri, socketAddress, e);
     }
 }

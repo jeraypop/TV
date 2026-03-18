@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.HandlerCompat;
 
-import com.fongmi.android.tv.adutil.ADType;
 import com.fongmi.android.tv.event.EventIndex;
 import com.fongmi.android.tv.ui.activity.CrashActivity;
 import com.fongmi.android.tv.utils.Notify;
@@ -25,7 +24,6 @@ import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.LogAdapter;
 import com.orhanobut.logger.Logger;
 import com.orhanobut.logger.PrettyFormatStrategy;
-import com.zh.pocket.PocketSdk;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -115,8 +113,6 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        //口袋工厂
-        PocketSdk.initSDK(this, "xiaomi", ADType.AD_ID);
         Notify.createChannel();
         Logger.addLogAdapter(getLogAdapter());
         OkHttp.get().setProxy(Setting.getProxy());
@@ -158,7 +154,6 @@ public class App extends Application {
             public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
             }
         });
-
     }
 
     @Override

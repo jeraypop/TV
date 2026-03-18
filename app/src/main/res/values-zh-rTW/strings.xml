@@ -3,11 +3,9 @@
     <!-- App -->
     <string name="app_name">影視</string>
 
-    <!-- Vod -->
-    <string name="vod_last">上次看到<xliff:g name="name">%s</xliff:g></string>
-
     <!-- Live -->
     <string name="live_pass">密碼</string>
+    <string name="live_refresh">刷新</string>
     <string name="live_line">來源 <xliff:g name="name">%s</xliff:g></string>
 
     <!-- Detail -->
@@ -28,16 +26,22 @@
 
     <!-- Play -->
     <string name="play">播放</string>
+    <string name="pause">暫停</string>
     <string name="play_op">片頭</string>
     <string name="play_ed">片尾</string>
     <string name="play_exo">EXO</string>
     <string name="play_next">下集</string>
     <string name="play_prev">上集</string>
     <string name="play_loop">循環</string>
-    <string name="play_timer">定時</string>
-    <string name="play_change">換源</string>
     <string name="play_forward">→</string>
     <string name="play_backward">←</string>
+    <string name="play_speed">1.00</string>
+    <string name="play_reset">刷新</string>
+    <string name="play_decode">硬解</string>
+    <string name="play_timer">定時</string>
+    <string name="play_scale">原始</string>
+    <string name="play_config">配置</string>
+    <string name="play_change">換源</string>
     <string name="play_invert">反轉</string>
     <string name="play_across">跨類</string>
     <string name="play_reverse">倒序</string>
@@ -48,9 +52,9 @@
     <string name="play_backward_hint">已切換倒序播放</string>
     <string name="play_now">正在播放：<xliff:g name="name">%s</xliff:g></string>
     <string name="play_ready">準備播放：<xliff:g name="name">%s</xliff:g></string>
-    <string name="play_switch_parse">正在切换解析至「<xliff:g name="name">%s</xliff:g>」</string>
     <string name="play_switch_flag">正在切換線路至「<xliff:g name="name">%s</xliff:g>」</string>
     <string name="play_switch_site">正在切換站源至「<xliff:g name="name">%s</xliff:g>」</string>
+    <string name="play_switch_parse">正在切换解析至「<xliff:g name="name">%s</xliff:g>」</string>
 
     <!-- Danmaku -->
     <string name="danmaku">彈幕</string>
@@ -70,7 +74,6 @@
     <string name="setting_wall">壁紙</string>
     <string name="setting_player">播放設定</string>
     <string name="setting_incognito">無痕模式</string>
-    <string name="setting_quality">圖片品質</string>
     <string name="setting_size">圖片尺寸</string>
     <string name="setting_doh">DoH</string>
     <string name="setting_proxy">Proxy</string>
@@ -97,11 +100,13 @@
     <string name="player_caption">字幕樣式</string>
     <string name="player_background">背景播放</string>
     <string name="player_audio_decode">音訊軟解</string>
+    <string name="player_video_decode">視訊軟解</string>
+    <string name="player_aac_track">AAC優先</string>
     <string name="player_danmaku_load">彈幕載入</string>
+    <string name="player_adblock">智慧去廣</string>
     <string name="player_tunnel">隧道模式</string>
     <string name="player_buffer">緩衝時間</string>
     <string name="player_speed">長按倍速</string>
-    <string name="player_rtsp">RTSP 通道</string>
     <string name="player_ua">User-Agent</string>
 
     <!-- Search -->
@@ -114,23 +119,22 @@
     <string name="dialog_edit">修改</string>
     <string name="dialog_positive">確定</string>
     <string name="dialog_negative">取消</string>
-    <string name="dialog_config_hint">請輸入接口…</string>
+    <string name="dialog_config_hint">請輸入配置…</string>
     <string name="dialog_config_name">請輸入名稱…</string>
     <string name="dialog_config_url">請輸入網址…</string>
 
     <!-- Error -->
     <string name="error_config_get">配置取得失敗</string>
-    <string name="error_config_parse">配置解析失敗</string>
     <string name="error_play_next">已經是最後一集了！</string>
     <string name="error_play_prev">已經是第一集了！</string>
     <string name="error_play_parse">播放網址解析失敗</string>
-    <string name="error_play_drm_scheme">本設備不支援所需的 DRM scheme</string>
-    <string name="error_play_code">錯誤代碼：<xliff:g name="name">%s</xliff:g></string>
+    <string name="error_play_drm">本設備不支援所需的 DRM scheme</string>
     <string name="error_play_url">播放網址載入失敗</string>
     <string name="error_play_flag">暫無線路資料</string>
     <string name="error_play_timeout">連線逾時</string>
+    <string name="error_play_tvbus">錯誤代碼：<xliff:g name="name">%s</xliff:g></string>
     <string name="error_detail">暫無播放資料</string>
-    <string name="error_empty">找不到資料</string>
+    <string name="error_empty">這裡什麼都沒有 👀</string>
 
     <!-- Update -->
     <string name="update_version">發現新版本 <xliff:g name="name">%s</xliff:g></string>
@@ -156,12 +160,6 @@
     <string-array name="select_decode">
         <item>軟解</item>
         <item>硬解</item>
-    </string-array>
-
-    <string-array name="select_quality">
-        <item>低</item>
-        <item>中</item>
-        <item>高</item>
     </string-array>
 
     <string-array name="select_size">

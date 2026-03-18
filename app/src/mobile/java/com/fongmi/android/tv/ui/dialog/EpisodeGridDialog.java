@@ -12,6 +12,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.fongmi.android.tv.bean.Episode;
 import com.fongmi.android.tv.databinding.DialogEpisodeGridBinding;
+import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
 import com.fongmi.android.tv.ui.fragment.EpisodeFragment;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -22,9 +23,10 @@ import java.util.List;
 
 public class EpisodeGridDialog extends BaseDialog {
 
+    private final List<String> titles;
+    private EpisodeAdapter.OnClickListener listener;
     private DialogEpisodeGridBinding binding;
     private List<Episode> episodes;
-    private final List<String> titles;
     private boolean reverse;
     private int spanCount;
     private int itemCount;
@@ -50,6 +52,7 @@ public class EpisodeGridDialog extends BaseDialog {
 
     public void show(FragmentActivity activity) {
         for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof BottomSheetDialogFragment) return;
+        this.listener = (EpisodeAdapter.OnClickListener) activity;
         show(activity.getSupportFragmentManager(), null);
     }
 
@@ -65,9 +68,17 @@ public class EpisodeGridDialog extends BaseDialog {
         setPager();
     }
 
+    @Override
+    protected void initEvent() {
+        getChildFragmentManager().setFragmentResultListener("result", this, (requestKey, bundle) -> {
+            listener.onItemClick(bundle.getParcelable("episode"));
+            dismiss();
+        });
+    }
+
     private void setSpanCount() {
         int total = 0;
-        int row = ResUtil.isLand(getActivity()) ? 5 : 10;
+        int row = ResUtil.isLand(requireActivity()) ? 5 : 10;
         for (Episode item : episodes) total += item.getName().length();
         int offset = (int) Math.ceil((double) total / episodes.size());
         if (offset >= 12) spanCount = 1;
@@ -83,7 +94,7 @@ public class EpisodeGridDialog extends BaseDialog {
     }
 
     private void setPager() {
-        binding.pager.setAdapter(new PageAdapter(getActivity()));
+        binding.pager.setAdapter(new PageAdapter(this));
         new TabLayoutMediator(binding.tabs, binding.pager, (tab, position) -> tab.setText(titles.get(position))).attach();
         setCurrentPage();
     }
@@ -99,8 +110,8 @@ public class EpisodeGridDialog extends BaseDialog {
 
     class PageAdapter extends FragmentStateAdapter {
 
-        public PageAdapter(@NonNull FragmentActivity activity) {
-            super(activity);
+        public PageAdapter(@NonNull Fragment fragment) {
+            super(fragment);
         }
 
         @NonNull

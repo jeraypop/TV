@@ -14,12 +14,9 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Setting;
-import com.fongmi.android.tv.bean.Hot;
-import com.fongmi.android.tv.bean.Site;
-import com.fongmi.android.tv.bean.Suggest;
+import com.fongmi.android.tv.bean.Word;
 import com.fongmi.android.tv.databinding.ActivitySearchBinding;
 import com.fongmi.android.tv.impl.Callback;
-import com.fongmi.android.tv.impl.SiteCallback;
 import com.fongmi.android.tv.ui.adapter.RecordAdapter;
 import com.fongmi.android.tv.ui.adapter.WordAdapter;
 import com.fongmi.android.tv.ui.base.BaseActivity;
@@ -29,19 +26,18 @@ import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.Util;
+import com.fongmi.android.tv.utils.ZhuToPin;
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.ZhuToPin;
 import com.google.common.net.HttpHeaders;
 
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.List;
+import java.util.Map;
 
 import okhttp3.Call;
-import okhttp3.Headers;
 import okhttp3.Response;
 
-public class SearchActivity extends BaseActivity implements WordAdapter.OnClickListener, RecordAdapter.OnClickListener, CustomKeyboard.Callback, SiteCallback {
+public class SearchActivity extends BaseActivity implements WordAdapter.OnClickListener, RecordAdapter.OnClickListener, CustomKeyboard.Callback {
 
     private ActivitySearchBinding mBinding;
     private RecordAdapter mRecordAdapter;
@@ -76,6 +72,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
                 else getSuggest(s.toString());
             }
         });
+        mBinding.mic.setOnClickListener(v -> mBinding.mic.start());
         mBinding.mic.setListener(this, new CustomTextListener() {
             @Override
             public void onEndOfSpeech() {
@@ -92,37 +89,41 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     }
 
     private void setRecyclerView() {
-        mBinding.wordRecycler.setHasFixedSize(true);
+        mBinding.wordRecycler.setItemAnimator(null);
+        mBinding.wordRecycler.setHasFixedSize(false);
         mBinding.wordRecycler.addItemDecoration(new SpaceItemDecoration(1, 16));
         mBinding.wordRecycler.setAdapter(mWordAdapter = new WordAdapter(this));
-        mBinding.recordRecycler.setHasFixedSize(true);
+        mBinding.recordRecycler.setHasFixedSize(false);
         mBinding.recordRecycler.addItemDecoration(new SpaceItemDecoration(1, 16));
         mBinding.recordRecycler.setAdapter(mRecordAdapter = new RecordAdapter(this));
     }
 
     private void getHot() {
-        mBinding.hint.setText(R.string.search_hot);
-        mWordAdapter.addAll(Hot.get(Setting.getHot()));
-        OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Headers.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(new Callback() {
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                List<String> items = Hot.get(response.body().string());
-                if (mWordAdapter.getItemCount() > 0) return;
-                App.post(() -> mWordAdapter.addAll(items));
-            }
-        });
+        mBinding.word.setText(R.string.search_hot);
+        mWordAdapter.setItems(Word.objectFrom(Setting.getHot()).getData());
+        OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Map.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(getCallback(true));
     }
 
     private void getSuggest(String text) {
-        mBinding.hint.setText(R.string.search_suggest);
-        OkHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + URLEncoder.encode(ZhuToPin.get(text))).enqueue(new Callback() {
+        mBinding.word.setText(R.string.search_suggest);
+        OkHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + URLEncoder.encode(ZhuToPin.get(text))).enqueue(getCallback(false));
+    }
+
+    private Callback getCallback(boolean hot) {
+        return new Callback() {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (mBinding.keyword.getText().toString().trim().isEmpty()) return;
-                List<String> items = Suggest.get(response.body().string());
-                App.post(() -> mWordAdapter.addAll(items));
+                String result = response.body().string();
+                if (TextUtils.isEmpty(result)) return;
+                App.post(() -> setAdapter(result, hot));
             }
-        });
+        };
+    }
+
+    private void setAdapter(String result, boolean save) {
+        if (!save && mBinding.keyword.getText().toString().trim().isEmpty()) return;
+        mWordAdapter.setItems(Word.objectFrom(result).getData(), () -> mBinding.wordRecycler.scrollToPosition(0));
+        if (save) Setting.putHot(result);
     }
 
     @Override
@@ -160,14 +161,6 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     @Override
     public void onRemote() {
         PushActivity.start(this, 1);
-    }
-
-    @Override
-    public void setSite(Site item) {
-    }
-
-    @Override
-    public void onChanged() {
     }
 
     @Override

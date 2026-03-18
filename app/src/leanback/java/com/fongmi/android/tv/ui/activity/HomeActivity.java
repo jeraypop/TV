@@ -1,13 +1,18 @@
 package com.fongmi.android.tv.ui.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.leanback.widget.ArrayObjectAdapter;
+import androidx.leanback.widget.FocusHighlight;
+import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
@@ -15,11 +20,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Product;
 import com.fongmi.android.tv.R;
@@ -27,6 +27,7 @@ import com.fongmi.android.tv.Updater;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.api.config.WallConfig;
+import com.fongmi.android.tv.bean.Cache;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Func;
 import com.fongmi.android.tv.bean.History;
@@ -37,12 +38,16 @@ import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.ActivityHomeBinding;
 import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.event.CastEvent;
+import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.event.ServerEvent;
 import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.player.Source;
+import com.fongmi.android.tv.player.exo.CacheManager;
 import com.fongmi.android.tv.server.Server;
+import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
 import com.fongmi.android.tv.ui.custom.CustomSelector;
@@ -55,8 +60,10 @@ import com.fongmi.android.tv.ui.presenter.ProgressPresenter;
 import com.fongmi.android.tv.ui.presenter.VodPresenter;
 import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.FileChooser;
+import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.net.OkHttp;
@@ -65,21 +72,28 @@ import com.google.common.collect.Lists;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class HomeActivity extends BaseActivity implements CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener {
 
     private ActivityHomeBinding mBinding;
     private ArrayObjectAdapter mHistoryAdapter;
-    private HistoryPresenter mPresenter;
+    private ArrayObjectAdapter mFuncAdapter;
     private ArrayObjectAdapter mAdapter;
+    private HistoryPresenter mPresenter;
     private SiteViewModel mViewModel;
-    private boolean loading;
     private Result mResult;
     private Clock mClock;
 
     private Site getHome() {
         return VodConfig.get().getHome();
+    }
+
+    private Config getConfig() {
+        return VodConfig.get().getConfig();
     }
 
     @Override
@@ -94,16 +108,22 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen.installSplashScreen(this);
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
     protected void initView() {
-        mClock = Clock.create(mBinding.clock).format("MM/dd HH:mm:ss");
-        mBinding.progressLayout.showProgress();
-        Updater.create().release().start(this);
         mResult = Result.empty();
-        Server.get().start();
+        mClock = Clock.create(mBinding.clock);
+        mBinding.progressLayout.showProgress();
+        Updater.create().start(this);
         setRecyclerView();
         setViewModel();
         setAdapter();
         initConfig();
+        setTitle();
         setLogo();
     }
 
@@ -123,21 +143,27 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         if (Intent.ACTION_SEND.equals(intent.getAction())) {
             VideoActivity.push(this, intent.getStringExtra(Intent.EXTRA_TEXT));
         } else if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
-            if ("text/plain".equals(intent.getType()) || UrlUtil.path(intent.getData()).endsWith(".m3u")) {
-                loadLive("file:/" + FileChooser.getPathFromUri(this, intent.getData()));
-            } else {
-                VideoActivity.push(this, intent.getData().toString());
-            }
+            PermissionUtil.requestFile(this, allGranted -> checkType(intent));
         }
     }
 
+    private void checkType(Intent intent) {
+        if ("text/plain".equals(intent.getType()) || UrlUtil.path(intent.getData()).endsWith(".m3u")) {
+            loadLive("file:/" + FileChooser.getPathFromUri(intent.getData()));
+        } else {
+            VideoActivity.push(this, intent.getData().toString());
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
     private void setRecyclerView() {
         CustomSelector selector = new CustomSelector();
         selector.addPresenter(Integer.class, new HeaderPresenter());
         selector.addPresenter(String.class, new ProgressPresenter());
+        selector.addPresenter(Vod.class, new VodPresenter(this, Style.list()));
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16), VodPresenter.class);
         selector.addPresenter(ListRow.class, new CustomRowPresenter(16), FuncPresenter.class);
-        selector.addPresenter(ListRow.class, new CustomRowPresenter(16), HistoryPresenter.class);
+        selector.addPresenter(ListRow.class, new CustomRowPresenter(16, FocusHighlight.ZOOM_FACTOR_SMALL, HorizontalGridView.FOCUS_SCROLL_ALIGNED), HistoryPresenter.class);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(selector)));
         mBinding.recycler.setVerticalSpacing(ResUtil.dp2px(16));
     }
@@ -147,49 +173,48 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         mViewModel.result.observe(this, result -> {
             mAdapter.remove("progress");
             addVideo(mResult = result);
+            Cache.clear().put(result);
         });
     }
 
     private void setAdapter() {
-        mAdapter.add(getFuncRow());
+        mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this));
+        mAdapter.add(new ListRow(mFuncAdapter = new ArrayObjectAdapter(new FuncPresenter(this))));
         mAdapter.add(R.string.home_history);
         mAdapter.add(R.string.home_recommend);
-        mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this));
+    }
+
+    private void setTitle() {
+        List<String> items = Arrays.asList(getHome().getName(), getConfig().getName(), getString(R.string.app_name));
+        Optional<String> optional = items.stream().filter(s -> !TextUtils.isEmpty(s)).findFirst();
+        optional.ifPresent(s -> mBinding.title.setText(s));
     }
 
     private void initConfig() {
-        if (isLoading()) return;
-        WallConfig.get().init();
-        LiveConfig.get().init().load();
         VodConfig.get().init().load(getCallback());
-        setLoading(true);
+        LiveConfig.get().init().load();
+        WallConfig.get().init();
     }
 
     private Callback getCallback() {
         return new Callback() {
             @Override
-            public void success(String result) {
-                Notify.show(result);
-            }
-
-            @Override
             public void success() {
-                mBinding.progressLayout.showContent();
-                checkAction(getIntent());
-                getHistory();
-                getVideo();
-                setFocus();
-                setLogo();
+                showContent();
             }
 
             @Override
             public void error(String msg) {
-                mBinding.progressLayout.showContent();
-                mResult = Result.empty();
                 Notify.show(msg);
-                setFocus();
+                showContent();
             }
         };
+    }
+
+    private void showContent() {
+        mBinding.progressLayout.showContent();
+        checkAction(getIntent());
+        setFocus();
     }
 
     private void loadLive(String url) {
@@ -202,7 +227,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private void setFocus() {
-        setLoading(false);
+        mBinding.title.setSelected(true);
         App.post(() -> mBinding.title.setFocusable(true), 500);
         if (!mBinding.title.hasFocus()) mBinding.recycler.requestFocus();
     }
@@ -210,33 +235,37 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private void getVideo() {
         mResult = Result.empty();
         int index = getRecommendIndex();
-        String title = getHome().getName();
-        mBinding.title.setText(title.isEmpty() ? ResUtil.getString(R.string.app_name) : title);
-        if (mAdapter.size() > index) mAdapter.removeItems(index, mAdapter.size() - index);
-        if (getHome().getKey().isEmpty()) return;
+        boolean gone = mAdapter.indexOf("progress") == -1;
+        boolean hasItem = gone && mAdapter.size() > index;
+        if (hasItem) mAdapter.removeItems(index, mAdapter.size() - index);
+        if (gone) mAdapter.add("progress");
         mViewModel.homeContent();
-        mAdapter.add("progress");
     }
 
     private void addVideo(Result result) {
         Style style = result.getStyle(getHome().getStyle());
-        for (List<Vod> items : Lists.partition(result.getList(), Product.getColumn(style))) {
+        if (style.isList()) mAdapter.addAll(mAdapter.size(), result.getList());
+        else addGrid(result.getList(), style);
+    }
+
+    private void addGrid(List<Vod> items, Style style) {
+        for (List<Vod> part : Lists.partition(items, Product.getColumn(style))) {
             ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(this, style));
-            adapter.setItems(items, null);
+            adapter.setItems(part, new BaseDiffCallback<Vod>());
             mAdapter.add(new ListRow(adapter));
         }
     }
 
-    private ListRow getFuncRow() {
-        ArrayObjectAdapter adapter = new ArrayObjectAdapter(new FuncPresenter(this));
-        adapter.add(Func.create(R.string.home_vod));
-        adapter.add(Func.create(R.string.home_live));
-        adapter.add(Func.create(R.string.home_search));
-        adapter.add(Func.create(R.string.home_keep));
-        adapter.add(Func.create(R.string.home_push));
-        adapter.add(Func.create(R.string.home_cast));
-        adapter.add(Func.create(R.string.home_setting));
-        return new ListRow(adapter);
+    private void setFunc() {
+        List<Func> items = new ArrayList<>();
+        items.add(Func.create(R.string.home_vod));
+        if (LiveConfig.hasUrl()) items.add(Func.create(R.string.home_live));
+        items.add(Func.create(R.string.home_search));
+        items.add(Func.create(R.string.home_keep));
+        items.add(Func.create(R.string.home_push));
+        items.add(Func.create(R.string.home_cast));
+        items.add(Func.create(R.string.home_setting));
+        mFuncAdapter.setItems(items, new BaseDiffCallback<Func>());
     }
 
     private void getHistory() {
@@ -251,7 +280,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         if (renew) mHistoryAdapter = new ArrayObjectAdapter(mPresenter = new HistoryPresenter(this));
         if ((items.isEmpty() && exist) || (renew && exist)) mAdapter.removeItems(historyIndex, 1);
         if ((!items.isEmpty() && !exist) || (renew && exist)) mAdapter.add(historyIndex, new ListRow(mHistoryAdapter));
-        mHistoryAdapter.setItems(items, null);
+        mHistoryAdapter.setItems(items, new BaseDiffCallback<History>());
     }
 
     private void setHistoryDelete(boolean delete) {
@@ -267,56 +296,40 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     private int getHistoryIndex() {
-        for (int i = 0; i < mAdapter.size(); i++) if (mAdapter.get(i).equals(R.string.home_history)) return i + 1;
-        return -1;
+        return mAdapter.indexOf(R.string.home_history) + 1;
     }
 
     private int getRecommendIndex() {
-        for (int i = 0; i < mAdapter.size(); i++) if (mAdapter.get(i).equals(R.string.home_recommend)) return i + 1;
-        return -1;
-    }
-
-    private boolean isLoading() {
-        return loading;
-    }
-
-    private void setLoading(boolean loading) {
-        this.loading = loading;
+        return mAdapter.indexOf(R.string.home_recommend) + 1;
     }
 
     private void setLogo() {
-        Glide.with(App.get()).load(UrlUtil.convert(VodConfig.get().getConfig().getLogo())).circleCrop().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).listener(getListener()).into(mBinding.logo);
+        ImgUtil.logo(mBinding.logo);
     }
 
-    private RequestListener<Drawable> getListener() {
-        return new RequestListener<>() {
-            @Override
-            public boolean onLoadFailed(@Nullable GlideException e, Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
-                mBinding.logo.setVisibility(View.GONE);
-                return false;
-            }
-
-            @Override
-            public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model, Target<Drawable> target, @NonNull DataSource dataSource, boolean isFirstResource) {
-                mBinding.logo.setVisibility(View.VISIBLE);
-                return false;
-            }
-        };
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConfigEvent(ConfigEvent event) {
+        switch (event.type()) {
+            case VOD:
+                RefreshEvent.history();
+                RefreshEvent.home();
+                setLogo();
+                break;
+            case COMMON:
+                setFunc();
+                break;
+            case BOOT:
+                LiveActivity.start(this);
+                break;
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onRefreshEvent(RefreshEvent event) {
-        super.onRefreshEvent(event);
         switch (event.getType()) {
-            case CONFIG:
-                setLogo();
-                break;
-            case VIDEO:
+            case HOME:
                 getVideo();
-                break;
-            case IMAGE:
-                int index = getRecommendIndex();
-                mAdapter.notifyArrayItemRangeChanged(index, mAdapter.size() - index);
+                setTitle();
                 break;
             case HISTORY:
                 getHistory();
@@ -330,22 +343,22 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onServerEvent(ServerEvent event) {
-        switch (event.getType()) {
+        switch (event.type()) {
             case SEARCH:
-                CollectActivity.start(this, event.getText());
+                CollectActivity.start(this, event.text());
                 break;
             case PUSH:
-                VideoActivity.push(this, event.getText());
+                VideoActivity.push(this, event.text());
                 break;
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCastEvent(CastEvent event) {
-        if (VodConfig.get().getConfig().equals(event.getConfig())) {
-            VideoActivity.cast(this, event.getHistory().update(VodConfig.getCid()));
+        if (VodConfig.get().getConfig().equals(event.config())) {
+            VideoActivity.cast(this, event.history().save(VodConfig.getCid()));
         } else {
-            VodConfig.load(event.getConfig(), getCallback(event));
+            VodConfig.load(event.config(), getCallback(event));
         }
     }
 
@@ -353,9 +366,6 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         return new Callback() {
             @Override
             public void success() {
-                RefreshEvent.history();
-                RefreshEvent.config();
-                RefreshEvent.video();
                 onCastEvent(event);
             }
 
@@ -370,7 +380,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     public void onItemClick(Func item) {
         switch (item.getResId()) {
             case R.string.home_vod:
-                VodActivity.start(this, mResult.clear());
+                VodActivity.start(this, mResult);
                 break;
             case R.string.home_live:
                 LiveActivity.start(this);
@@ -396,13 +406,14 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     public void onItemClick(Vod item) {
         if (item.isAction()) mViewModel.action(getHome().getKey(), item.getAction());
-        else if (getHome().isIndex()) CollectActivity.start(getActivity(), item.getVodName());
-        else VideoActivity.start(this, getHome().getKey(), item.getVodId(), item.getVodName(), item.getVodPic());
+        else if (getHome().isIndex()) CollectActivity.start(this, item.getName());
+        else VideoActivity.start(this, getHome().getKey(), item.getId(), item.getName(), item.getPic());
     }
 
     @Override
     public boolean onLongClick(Vod item) {
-        CollectActivity.start(this, item.getVodName());
+        if (item.isAction()) return false;
+        CollectActivity.start(this, item.getName());
         return true;
     }
 
@@ -439,16 +450,12 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     public void setSite(Site item) {
         VodConfig.get().setHome(item);
-        getVideo();
-    }
-
-    @Override
-    public void onChanged() {
     }
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (KeyUtil.isMenuKey(event)) showDialog();
+        if (KeyUtil.isActionDown(event) & KeyUtil.isDownKey(event) && getCurrentFocus() == mBinding.title) return mBinding.recycler.getChildAt(0).requestFocus();
         return super.dispatchKeyEvent(event);
     }
 
@@ -465,32 +472,28 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     }
 
     @Override
-    protected boolean handleBack() {
-        return true;
-    }
-
-    @Override
-    protected void onBackPress() {
+    protected void onBackInvoked() {
         if (mBinding.progressLayout.isProgress()) {
-            mBinding.progressLayout.showContent();
+            showContent();
         } else if (mPresenter.isDelete()) {
             setHistoryDelete(false);
         } else if (mBinding.recycler.getSelectedPosition() != 0) {
             mBinding.recycler.scrollToPosition(0);
         } else {
-            finish();
+            if (PlaybackService.isRunning()) moveTaskToBack(true);
+            else super.onBackInvoked();
         }
     }
 
     @Override
     protected void onDestroy() {
-        WallConfig.get().clear();
+        CacheManager.get().release();
         LiveConfig.get().clear();
         VodConfig.get().clear();
-        OkHttp.get().clear();
         AppDatabase.backup();
-        Server.get().stop();
+        OkHttp.get().clear();
         Source.get().exit();
+        Server.get().stop();
         super.onDestroy();
     }
 }

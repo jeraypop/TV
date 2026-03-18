@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.fragment.app.Fragment;
 import androidx.viewbinding.ViewBinding;
 
@@ -23,13 +24,16 @@ import com.fongmi.android.tv.api.config.WallConfig;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.databinding.ActivityHomeBinding;
 import com.fongmi.android.tv.db.AppDatabase;
+import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.event.ServerEvent;
 import com.fongmi.android.tv.event.StateEvent;
 import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.player.Source;
+import com.fongmi.android.tv.player.exo.CacheManager;
 import com.fongmi.android.tv.receiver.ShortcutReceiver;
 import com.fongmi.android.tv.server.Server;
+import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.FragmentStateManager;
 import com.fongmi.android.tv.ui.fragment.SettingFragment;
@@ -37,6 +41,7 @@ import com.fongmi.android.tv.ui.fragment.SettingPlayerFragment;
 import com.fongmi.android.tv.ui.fragment.VodFragment;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.net.OkHttp;
 import com.google.android.material.navigation.NavigationBarView;
@@ -62,11 +67,16 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     }
 
     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen.installSplashScreen(this);
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
     protected void initView(Bundle savedInstanceState) {
         orientation = getResources().getConfiguration().orientation;
-        Updater.create().release().start(this);
         initFragment(savedInstanceState);
-        Server.get().start();
+        Updater.create().start(this);
         initConfig();
     }
 
@@ -80,11 +90,15 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
         if (Intent.ACTION_SEND.equals(intent.getAction())) {
             VideoActivity.push(this, intent.getStringExtra(Intent.EXTRA_TEXT));
         } else if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
-            if ("text/plain".equals(intent.getType()) || UrlUtil.path(intent.getData()).endsWith(".m3u")) {
-                loadLive("file:/" + FileChooser.getPathFromUri(this, intent.getData()));
-            } else {
-                VideoActivity.push(this, intent.getData().toString());
-            }
+            PermissionUtil.requestFile(this, allGranted -> checkType(intent));
+        }
+    }
+
+    private void checkType(Intent intent) {
+        if ("text/plain".equals(intent.getType()) || UrlUtil.path(intent.getData()).endsWith(".m3u")) {
+            loadLive("file:/" + FileChooser.getPathFromUri(intent.getData()));
+        } else {
+            VideoActivity.push(this, intent.getData().toString());
         }
     }
 
@@ -102,28 +116,21 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     }
 
     private void initConfig() {
-        WallConfig.get().init();
-        LiveConfig.get().init().load();
         VodConfig.get().init().load(getCallback());
+        LiveConfig.get().init().load();
+        WallConfig.get().init();
     }
 
     private Callback getCallback() {
         return new Callback() {
             @Override
-            public void success(String result) {
-                Notify.show(result);
-            }
-
-            @Override
             public void success() {
                 checkAction(getIntent());
-                RefreshEvent.config();
-                RefreshEvent.video();
             }
 
             @Override
             public void error(String msg) {
-                RefreshEvent.config();
+                checkAction(getIntent());
                 StateEvent.empty();
                 Notify.show(msg);
             }
@@ -161,16 +168,25 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
         mManager.change(position);
     }
 
-    @Override
-    public void onRefreshEvent(RefreshEvent event) {
-        super.onRefreshEvent(event);
-        if (event.getType().equals(RefreshEvent.Type.CONFIG)) setNavigation();
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConfigEvent(ConfigEvent event) {
+        switch (event.type()) {
+            case VOD:
+                RefreshEvent.home();
+                break;
+            case COMMON:
+                setNavigation();
+                break;
+            case BOOT:
+                LiveActivity.start(this);
+                break;
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onServerEvent(ServerEvent event) {
-        if (event.getType() != ServerEvent.Type.PUSH) return;
-        VideoActivity.push(this, event.getText());
+        if (event.type() != ServerEvent.Type.PUSH) return;
+        VideoActivity.push(this, event.text());
     }
 
     @Override
@@ -191,16 +207,12 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     private void checkOrientation(Configuration newConfig) {
         if (orientation != newConfig.orientation) {
             orientation = newConfig.orientation;
-            RefreshEvent.video();
+            RefreshEvent.home();
         }
     }
 
-    protected boolean handleBack() {
-        return true;
-    }
-
     @Override
-    protected void onBackPress() {
+    protected void onBackInvoked() {
         if (!mBinding.navigation.getMenu().findItem(R.id.vod).isVisible()) {
             setNavigation();
         } else if (mManager.isVisible(2)) {
@@ -208,17 +220,18 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
         } else if (mManager.isVisible(1)) {
             mBinding.navigation.setSelectedItemId(R.id.vod);
         } else if (mManager.canBack(0)) {
-            finish();
+            if (PlaybackService.isRunning()) moveTaskToBack(true);
+            else super.onBackInvoked();
         }
     }
 
     @Override
     protected void onDestroy() {
-        WallConfig.get().clear();
+        CacheManager.get().release();
         LiveConfig.get().clear();
         VodConfig.get().clear();
-        OkHttp.get().clear();
         AppDatabase.backup();
+        OkHttp.get().clear();
         Source.get().exit();
         Server.get().stop();
         super.onDestroy();

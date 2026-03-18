@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.server;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.player.Players;
 import com.github.catvod.Proxy;
 import com.github.catvod.utils.Util;
@@ -8,7 +9,6 @@ public class Server {
 
     private Players player;
     private Nano nano;
-    private int port;
 
     private static class Loader {
         static volatile Server INSTANCE = new Server();
@@ -16,14 +16,6 @@ public class Server {
 
     public static Server get() {
         return Loader.INSTANCE;
-    }
-
-    public Server() {
-        this.port = 9978;
-    }
-
-    public int getPort() {
-        return port;
     }
 
     public Players getPlayer() {
@@ -47,27 +39,28 @@ public class Server {
     }
 
     public String getAddress(boolean local) {
-        return "http://" + (local ? "127.0.0.1" : Util.getIp()) + ":" + getPort();
+        return "http://" + (local ? "127.0.0.1" : Util.getIp()) + ":" + Proxy.getPort();
     }
 
-    public void start() {
+    public synchronized void start() {
         if (nano != null) return;
-        do {
+        for (int i = 9978; i < 9999; i++) {
             try {
-                nano = new Nano(port);
-                Proxy.set(port);
-                nano.start();
+                nano = new Nano(i);
+                nano.start(500);
+                Proxy.set(i);
                 break;
-            } catch (Exception e) {
-                ++port;
-                nano.stop();
+            } catch (Throwable e) {
                 nano = null;
             }
-        } while (port < 9999);
+        }
     }
 
     public void stop() {
-        if (nano != null) nano.stop();
-        nano = null;
+        App.execute(() -> {
+            if (nano != null) nano.stop();
+            player = null;
+            nano = null;
+        });
     }
 }

@@ -2,11 +2,12 @@ package com.fongmi.android.tv.bean;
 
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.google.gson.annotations.SerializedName;
-
-import java.io.File;
 
 public class Danmaku {
 
@@ -18,24 +19,9 @@ public class Danmaku {
     private boolean selected;
 
     public static Danmaku from(String path) {
-        if (path.startsWith("http")) {
-            return http(path);
-        } else {
-            return file(path);
-        }
-    }
-
-    public static Danmaku http(String path) {
         Danmaku danmaku = new Danmaku();
         danmaku.setName(path);
         danmaku.setUrl(path);
-        return danmaku;
-    }
-
-    public static Danmaku file(String path) {
-        Danmaku danmaku = new Danmaku();
-        danmaku.setName(new File(path).getName());
-        danmaku.setUrl("file:/" + path);
         return danmaku;
     }
 
@@ -71,11 +57,20 @@ public class Danmaku {
         return getUrl().isEmpty();
     }
 
+    public String getRealUrl() {
+        return UrlUtil.convert(getUrl().startsWith("/") ? "file:/" + getUrl() : getUrl());
+    }
+
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Danmaku)) return false;
-        Danmaku it = (Danmaku) obj;
+        if (!(obj instanceof Danmaku it)) return false;
         return getUrl().equals(it.getUrl());
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return App.gson().toJson(this);
     }
 }

@@ -3,12 +3,16 @@ package com.github.catvod.net.interceptor;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.github.catvod.bean.Header;
+import com.github.catvod.utils.Json;
 import com.github.catvod.utils.Util;
 import com.google.common.net.HttpHeaders;
 
 import java.io.IOException;
-import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -22,31 +26,43 @@ import okio.Okio;
 
 public class ResponseInterceptor implements Interceptor {
 
-    private final ConcurrentHashMap<String, String> redirect;
+    private final List<Header> headers;
+    private final ConcurrentHashMap<String, String> redirectMap;
 
     public ResponseInterceptor() {
-        this.redirect = new ConcurrentHashMap<>();
+        headers = new CopyOnWriteArrayList<>();
+        redirectMap = new ConcurrentHashMap<>();
+    }
+
+    public void addAll(List<Header> items) {
+        headers.addAll(items);
+    }
+
+    public void clear() {
+        headers.clear();
+        redirectMap.clear();
     }
 
     @NonNull
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException {
-        Request request = chain.request();
-        Response response = chain.proceed(checkUser(request));
+        Request request = check(chain.request());
+        Response response = chain.proceed(request);
         if ("deflate".equals(response.header(HttpHeaders.CONTENT_ENCODING))) return deflate(response);
-        if (response.code() == 302) redirect.put(response.header(HttpHeaders.LOCATION), request.url().toString());
-        if (response.code() == 406 && redirect.containsKey(request.url().toString())) return redirect(request, response);
+        if (response.code() == 406 && redirectMap.containsKey(request.url().toString())) return redirect(request, response);
+        if (response.code() == 302 && response.header(HttpHeaders.LOCATION) != null) redirectMap.put(response.header(HttpHeaders.LOCATION), request.url().toString());
         return response;
     }
 
-    private Request checkUser(Request request) {
-        URI uri = request.url().uri();
-        if (uri.getUserInfo() == null) return request;
-        return request.newBuilder().header(HttpHeaders.AUTHORIZATION, Util.basic(uri.getUserInfo())).build();
+    private Request check(Request request) {
+        String host = request.url().host();
+        Request.Builder builder = request.newBuilder();
+        for (Header item : headers) if (Util.containOrMatch(host, item.getHost())) Json.toMap(item.getHeader()).forEach(builder::header);
+        return builder.build();
     }
 
     private Response redirect(Request request, Response response) {
-        return new Response.Builder().request(request).protocol(response.protocol()).code(302).message("Found").header(HttpHeaders.LOCATION, redirect.get(request.url().toString())).build();
+        return new Response.Builder().request(request).protocol(response.protocol()).code(302).message("Found").header(HttpHeaders.LOCATION, redirectMap.get(request.url().toString())).build();
     }
 
     private Response deflate(Response response) {

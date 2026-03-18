@@ -6,32 +6,27 @@ import com.fongmi.android.tv.server.Server;
 import com.github.catvod.net.OkHttp;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
 
 public class ScanTask {
 
-    private final List<Device> devices;
+    private final List<Future<?>> future;
     private final OkHttpClient client;
-
-    private ExecutorService executor;
     private Listener listener;
 
     public ScanTask(Listener listener) {
-        this.devices = Collections.synchronizedList(new ArrayList<>());
         this.client = OkHttp.client(1000);
+        this.future = new ArrayList<>();
         this.listener = listener;
     }
 
-    public void start(List<String> ips) {
-        App.execute(() -> run(getUrl(ips)));
+    public void start() {
+        App.execute(() -> run(getUrl()));
     }
 
     public void start(String url) {
@@ -39,59 +34,35 @@ public class ScanTask {
     }
 
     public void stop() {
-        if (executor != null) executor.shutdownNow();
-        executor = null;
         listener = null;
+        OkHttp.cancel(client, "scan");
+        future.forEach(f -> f.cancel(true));
+        future.clear();
     }
 
-    private void init() {
-        if (executor != null) executor.shutdownNow();
-        executor = Executors.newCachedThreadPool();
-        devices.clear();
+    private void run(List<String> urls) {
+        for (String url : urls) future.add(App.submitSearch(() -> findDevice(url)));
     }
 
-    private void run(List<String> items) {
-        try {
-            init();
-            getDevice(items);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            App.post(() -> {
-                if (listener != null) listener.onFind(devices);
-            });
-        }
-    }
-
-    private void getDevice(List<String> urls) throws Exception {
-        CountDownLatch cd = new CountDownLatch(urls.size());
-        for (String url : urls) executor.execute(() -> findDevice(cd, url));
-        cd.await();
-    }
-
-    private List<String> getUrl(List<String> ips) {
-        Set<String> urls = new HashSet<>(ips);
+    private List<String> getUrl() {
         String local = Server.get().getAddress();
         String base = local.substring(0, local.lastIndexOf(".") + 1);
-        for (int i = 1; i < 256; i++) urls.add(base + i + ":9978");
-        return new ArrayList<>(urls);
+        return IntStream.range(1, 256).mapToObj(i -> base + i + ":9978").toList();
     }
 
-    private void findDevice(CountDownLatch cd, String url) {
-        try {
-            if (url.contains(Server.get().getAddress())) return;
-            String result = OkHttp.newCall(client, url.concat("/device")).execute().body().string();
-            Device device = Device.objectFrom(result);
-            if (device == null) return;
-            devices.add(device.save());
+    private void findDevice(String url) {
+        if (url.equals(Server.get().getAddress())) return;
+        try (Response res = OkHttp.newCall(client, url.concat("/device"), "scan").execute()) {
+            Device device = Device.objectFrom(res.body().string());
+            if (device != null) App.post(() -> {
+                if (listener != null) listener.onFind(device.save());
+            });
         } catch (Exception ignored) {
-        } finally {
-            cd.countDown();
         }
     }
 
     public interface Listener {
 
-        void onFind(List<Device> devices);
+        void onFind(Device device);
     }
 }

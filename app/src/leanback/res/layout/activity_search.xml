@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    android:keepScreenOn="true"
     android:orientation="horizontal"
     android:paddingStart="24dp"
     android:paddingTop="24dp"
     android:paddingEnd="24dp">
 
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/recordLayout"
-        android:layout_width="128dp"
+        android:layout_width="144dp"
         android:layout_height="match_parent"
         android:layout_marginEnd="24dp"
         android:orientation="vertical">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
@@ -38,7 +37,7 @@
             tools:itemCount="10"
             tools:listitem="@layout/adapter_search_record" />
 
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -52,8 +51,6 @@
             android:layout_marginEnd="12dp"
             android:focusable="true"
             android:focusableInTouchMode="true"
-            android:nextFocusLeft="@id/record"
-            android:scaleType="fitCenter"
             android:src="@drawable/ic_search_mic" />
 
         <com.fongmi.android.tv.ui.custom.CustomSearchView
@@ -71,7 +68,6 @@
             android:inputType="textCapWords|textAutoCorrect|textAutoComplete"
             android:letterSpacing="0.02"
             android:maxLength="255"
-            android:nextFocusRight="@id/word"
             android:singleLine="true"
             android:textColor="@color/white"
             android:textColorHint="@color/white"
@@ -91,14 +87,13 @@
 
     </RelativeLayout>
 
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginEnd="24dp"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/hint"
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/word"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
@@ -118,6 +113,6 @@
             tools:itemCount="10"
             tools:listitem="@layout/adapter_search_word" />
 
-    </LinearLayout>
-</LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</androidx.appcompat.widget.LinearLayoutCompat>
 

@@ -11,32 +11,33 @@ import com.fongmi.android.tv.databinding.AdapterParseBinding;
 
 public class ParsePresenter extends Presenter {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
 
     public ParsePresenter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
     }
 
     public interface OnClickListener {
         void onItemClick(Parse parse);
     }
 
+    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         return new ViewHolder(AdapterParseBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object object) {
+    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         Parse item = (Parse) object;
         ViewHolder holder = (ViewHolder) viewHolder;
         holder.binding.text.setText(item.getName());
         holder.binding.text.setActivated(item.isActivated());
-        setOnClickListener(holder, view -> mListener.onItemClick(item));
+        setOnClickListener(holder, view -> listener.onItemClick(item));
     }
 
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
     }
 
     public static class ViewHolder extends Presenter.ViewHolder {

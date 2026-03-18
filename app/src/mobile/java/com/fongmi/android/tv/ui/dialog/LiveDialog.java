@@ -40,7 +40,7 @@ public class LiveDialog implements LiveAdapter.OnClickListener {
 
     private LiveDialog(Fragment fragment) {
         this.callback = (LiveCallback) fragment;
-        init(fragment.getActivity());
+        init(fragment.requireActivity());
     }
 
     private void init(Activity activity) {
@@ -65,7 +65,7 @@ public class LiveDialog implements LiveAdapter.OnClickListener {
         binding.recycler.setHasFixedSize(true);
         binding.recycler.addItemDecoration(new SpaceItemDecoration(1, 8));
         binding.recycler.post(() -> binding.recycler.scrollToPosition(LiveConfig.getHomeIndex()));
-        if (full) binding.recycler.setMaxHeight(264);
+        if (full) binding.recycler.setMaxHeight(ResUtil.dp2px(264));
     }
 
     private void setDialog() {

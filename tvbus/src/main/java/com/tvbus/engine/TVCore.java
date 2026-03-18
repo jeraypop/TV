@@ -1,16 +1,21 @@
 package com.tvbus.engine;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.github.catvod.Init;
 
-public class TVCore {
+import java.util.List;
 
+public class TVCore implements Runnable {
+
+    private final Thread thread;
     private final long handle;
 
-    public TVCore(String so) {
-        System.load(so);
+    public TVCore(String path) {
+        System.load(path);
         handle = initialise();
+        thread = new Thread(this);
     }
 
     public TVCore listener(Listener listener) {
@@ -94,17 +99,17 @@ public class TVCore {
         }
     }
 
-    public TVCore init() {
-        new Thread(this::start).start();
-        return this;
-    }
-
-    private void start() {
+    public void option(String key, List<String> values) {
         try {
-            init(handle, Init.context());
-            run(handle);
+            if (values.isEmpty()) return;
+            values.removeIf(TextUtils::isEmpty);
+            for (String value : values) setOption(handle, key, value);
         } catch (Throwable ignored) {
         }
+    }
+
+    public void init() {
+        thread.start();
     }
 
     public void start(String url) {
@@ -124,6 +129,16 @@ public class TVCore {
     public void quit() {
         try {
             quit(handle);
+            thread.interrupt();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            init(handle, Init.context());
+            run(handle);
         } catch (Throwable ignored) {
         }
     }
@@ -157,4 +172,6 @@ public class TVCore {
     private native void setUsername(long handle, String str);
 
     private native void setListener(long handle, Listener listener);
+
+    private native void setOption(long handle, String kev, String value);
 }

@@ -12,20 +12,19 @@ import com.github.catvod.utils.Path;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 public class RestoreAdapter extends RecyclerView.Adapter<RestoreAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final SimpleDateFormat format;
     private final List<File> mItems;
 
     public RestoreAdapter(OnClickListener listener) {
         this.format = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         this.mItems = new ArrayList<>();
-        this.mListener = listener;
+        this.listener = listener;
         this.addAll();
     }
 
@@ -40,7 +39,7 @@ public class RestoreAdapter extends RecyclerView.Adapter<RestoreAdapter.ViewHold
         File[] files = Path.tv().listFiles();
         if (files == null) files = new File[0];
         for (File file : files) if (file.getName().startsWith("tv") && file.getName().endsWith(".bk.gz")) mItems.add(file);
-        if (!mItems.isEmpty()) Collections.sort(mItems, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+        if (!mItems.isEmpty()) mItems.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
         notifyDataSetChanged();
     }
 
@@ -69,11 +68,11 @@ public class RestoreAdapter extends RecyclerView.Adapter<RestoreAdapter.ViewHold
         File item = mItems.get(position);
         holder.binding.name.setText(item.getName());
         holder.binding.time.setText(format.format(item.lastModified()));
-        holder.binding.delete.setOnClickListener(v -> mListener.onDeleteClick(item));
-        holder.binding.getRoot().setOnClickListener(v -> mListener.onItemClick(item));
+        holder.binding.delete.setOnClickListener(v -> listener.onDeleteClick(item));
+        holder.binding.getRoot().setOnClickListener(v -> listener.onItemClick(item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterRestoreBinding binding;
 

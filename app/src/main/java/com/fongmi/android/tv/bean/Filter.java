@@ -58,8 +58,7 @@ public class Filter implements Parcelable {
     }
 
     public String setActivated(String v) {
-        int index = getValue().indexOf(new Value(v));
-        if (index != -1) getValue().get(index).setActivated(true);
+        getValue().stream().filter(item -> item.equals(Value.create(v))).findFirst().ifPresent(item -> item.setActivated(true));
         return v;
     }
 
@@ -68,9 +67,19 @@ public class Filter implements Parcelable {
         return this;
     }
 
+    public Filter copy() {
+        Filter copy = new Filter();
+        copy.key = this.key;
+        copy.name = this.name;
+        copy.init = this.init;
+        copy.value = new ArrayList<>();
+        getValue().forEach(item -> copy.value.add(item.copy()));
+        return copy;
+    }
+
     public Filter trans() {
         if (Trans.pass()) return this;
-        for (Value value : getValue()) value.trans();
+        getValue().forEach(Value::trans);
         return this;
     }
 

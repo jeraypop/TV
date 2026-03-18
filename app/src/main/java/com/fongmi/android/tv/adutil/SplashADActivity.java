@@ -27,7 +27,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-
 import com.fongmi.android.tv.ui.activity.HomeActivity;
 import com.zh.pocket.PocketSdk;
 import com.zh.pocket.ads.splash.SplashAD;
@@ -57,7 +56,6 @@ public class SplashADActivity extends Activity implements SplashADListener {
     public volatile boolean clickableAD = false;
     public volatile boolean pingbiAcessibility = false;
     public volatile Boolean mADExposure=false ;
-    private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             tvTitle.setText("请稍后,正在初始化~~~"+(msg.what - 1) + "s");
             if (msg.what == 0) {
@@ -84,8 +82,6 @@ public class SplashADActivity extends Activity implements SplashADListener {
             return;
         }
 
-//        mDisrupt = true;
-//        next(this);
 
         // 如果targetSDKVersion >= 23，就要申请好权限。如果您的App没有适配到Android6.0（即targetSDKVersion < 23），那么只需要在这里直接调用fetchSplashAD接口。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -200,8 +196,6 @@ public class SplashADActivity extends Activity implements SplashADListener {
     }
 
     private void fetchSplashAD(Activity activity, ViewGroup adContainer, SplashADListener adListener) {
-
-//        PocketSdk.initSDK(this, "xiaomi", ADType.AD_ID);
         SplashAD splashAD = new SplashAD(activity, ADType.SPLASH_AD_ID);
         splashAD.setSplashADListener(adListener);
 

@@ -9,10 +9,10 @@ import androidx.appcompat.app.AlertDialog;
 import com.fongmi.android.tv.databinding.DialogUpdateBinding;
 import com.fongmi.android.tv.utils.Download;
 import com.fongmi.android.tv.utils.FileUtil;
+import com.fongmi.android.tv.utils.Github;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Github;
 import com.github.catvod.utils.Path;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -26,18 +26,17 @@ public class Updater implements Download.Callback {
     private DialogUpdateBinding binding;
     private final Download download;
     private AlertDialog dialog;
-    private boolean dev;
 
     private File getFile() {
         return Path.cache("update.apk");
     }
 
     private String getJson() {
-        return Github.getJson(dev, BuildConfig.FLAVOR_mode);
+        return Github.getJson(BuildConfig.FLAVOR_mode);
     }
 
     private String getApk() {
-        return Github.getApk(dev, BuildConfig.FLAVOR_mode + "-" + BuildConfig.FLAVOR_abi);
+        return Github.getApk(BuildConfig.FLAVOR_mode + "-" + BuildConfig.FLAVOR_abi);
     }
 
     public static Updater create() {
@@ -45,22 +44,12 @@ public class Updater implements Download.Callback {
     }
 
     public Updater() {
-        this.download = Download.create(getApk(), getFile(), this);
+        this.download = Download.create(getApk(), getFile());
     }
 
     public Updater force() {
         Notify.show(R.string.update_check);
         Setting.putUpdate(true);
-        return this;
-    }
-
-    public Updater release() {
-        this.dev = false;
-        return this;
-    }
-
-    public Updater dev() {
-        this.dev = true;
         return this;
     }
 
@@ -70,11 +59,8 @@ public class Updater implements Download.Callback {
     }
 
     public void start(Activity activity) {
+        if (!Setting.getUpdate()) return;
         App.execute(() -> doInBackground(activity));
-    }
-
-    private boolean need(int code, String name) {
-        return Setting.getUpdate() && (dev ? !name.equals(BuildConfig.VERSION_NAME) && code >= BuildConfig.VERSION_CODE : code > BuildConfig.VERSION_CODE);
     }
 
     private void doInBackground(Activity activity) {
@@ -83,7 +69,7 @@ public class Updater implements Download.Callback {
             String name = object.optString("name");
             String desc = object.optString("desc");
             int code = object.optInt("code");
-            if (need(code, name)) App.post(() -> show(activity, name, desc));
+            if (code > BuildConfig.VERSION_CODE) App.post(() -> show(activity, name, desc));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -109,8 +95,8 @@ public class Updater implements Download.Callback {
     }
 
     private void confirm(View view) {
-        binding.confirm.setEnabled(false);
-        download.start();
+        view.setEnabled(false);
+        download.start(this);
     }
 
     private void dismiss() {

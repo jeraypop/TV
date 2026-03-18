@@ -3,7 +3,11 @@ package com.fongmi.android.tv.ui.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
@@ -11,9 +15,7 @@ import com.fongmi.android.tv.bean.Class;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.databinding.ActivityFolderBinding;
 import com.fongmi.android.tv.ui.base.BaseActivity;
-import com.fongmi.android.tv.ui.fragment.TypeFragment;
-
-import java.util.HashMap;
+import com.fongmi.android.tv.ui.fragment.FolderFragment;
 
 public class FolderActivity extends BaseActivity {
 
@@ -41,19 +43,32 @@ public class FolderActivity extends BaseActivity {
     }
 
     @Override
-    protected void initView(Bundle savedInstanceState) {
-        Result result = getResult();
-        Class type = result.getTypes().get(0);
-        mBinding.text.setText(type.getTypeName());
-        getSupportFragmentManager().beginTransaction().replace(R.id.container, TypeFragment.newInstance(getKey(), type.getTypeId(), type.getStyle(), new HashMap<>(), "1".equals(type.getTypeFlag())), "0").commitAllowingStateLoss();
-    }
-
-    private TypeFragment getFragment() {
-        return (TypeFragment) getSupportFragmentManager().findFragmentByTag("0");
+    public void setSupportActionBar(@Nullable Toolbar toolbar) {
+        super.setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
     @Override
-    public void onBackPressed() {
-        if (getFragment().canBack()) super.onBackPressed();
+    protected void initView(Bundle savedInstanceState) {
+        setSupportActionBar(mBinding.toolbar);
+        Class type = getResult().getTypes().get(0);
+        setTitle(type.getTypeName());
+        getSupportFragmentManager().beginTransaction().replace(R.id.container, FolderFragment.newInstance(getKey(), type, 8), "0").commit();
+    }
+
+    private FolderFragment getFragment() {
+        return (FolderFragment) getSupportFragmentManager().findFragmentByTag("0");
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == android.R.id.home) onBackInvoked();
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onBackInvoked() {
+        if (getFragment().canBack()) getFragment().goBack();
+        else super.onBackInvoked();
     }
 }

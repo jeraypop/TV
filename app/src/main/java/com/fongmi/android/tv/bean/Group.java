@@ -2,11 +2,13 @@ package com.fongmi.android.tv.bean;
 
 import android.text.TextUtils;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
@@ -137,14 +139,14 @@ public class Group {
     }
 
     public void add(Channel channel) {
-        int index = getChannel().indexOf(channel);
-        if (index == -1) getChannel().add(Channel.create(channel));
-        else getChannel().get(index).getUrls().addAll(channel.getUrls());
+        Channel exist = getChannel().stream().filter(item -> item.equals(channel)).findFirst().orElse(null);
+        if (exist != null) exist.getUrls().addAll(channel.getUrls());
+        else getChannel().add(Channel.create(channel));
     }
 
     public Channel find(Channel channel) {
-        int index = getChannel().indexOf(channel);
-        if (index != -1) return getChannel().get(index);
+        Channel exist = getChannel().stream().filter(item -> item.equals(channel)).findFirst().orElse(null);
+        if (exist != null) return exist;
         getChannel().add(channel);
         return channel;
     }
@@ -153,12 +155,17 @@ public class Group {
         return getChannel().get(getPosition()).group(this);
     }
 
+    public Group trans() {
+        if (Trans.pass()) return this;
+        this.name = Trans.s2t(name);
+        return this;
+    }
+
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (obj == null) return false;
         if (this == obj) return true;
-        if (!(obj instanceof Group)) return false;
-        Group it = (Group) obj;
+        if (!(obj instanceof Group it)) return false;
         return getName().equals(it.getName()) && getChannel().size() == it.getChannel().size();
     }
 }

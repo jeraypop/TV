@@ -8,93 +8,86 @@
     android:paddingEnd="8dp"
     android:scrollbars="none">
 
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/player"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:text="@string/play_exo" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/decode"
-            style="@style/Control.Action"
-            tools:text="硬解" />
+            style="@style/Control"
+            android:text="@string/play_decode" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/speed"
-            style="@style/Control.Action"
-            tools:text="速度" />
+            style="@style/Control"
+            android:fontFeatureSettings="tnum"
+            android:text="@string/play_speed" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/scale"
-            style="@style/Control.Action"
-            tools:text="縮放" />
+            style="@style/Control"
+            android:text="@string/play_scale" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/reset"
-            style="@style/Control.Action"
-            android:textColor="@color/text"
-            tools:text="刷新" />
+            style="@style/Control"
+            android:text="@string/play_reset" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/loop"
-            style="@style/Control.Action"
-            android:text="@string/play_loop"
-            android:textColor="@color/text" />
+            style="@style/Control"
+            android:text="@string/play_loop" />
 
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/text"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:tag="3"
-            android:text="@string/play_track_text"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:text="@string/play_track_text" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/audio"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:tag="1"
-            android:text="@string/play_track_audio"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:text="@string/play_track_audio" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/video"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:tag="2"
-            android:text="@string/play_track_video"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:text="@string/play_track_video" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/opening"
-            style="@style/Control.Action"
-            tools:text="片頭" />
+            style="@style/Control"
+            android:text="@string/play_op" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/ending"
-            style="@style/Control.Action"
-            tools:text="片尾" />
+            style="@style/Control"
+            android:text="@string/play_ed" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/danmaku"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:text="@string/danmaku"
             android:visibility="gone"
             tools:visibility="visible" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/episodes"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:text="@string/detail_episode" />
 
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 </HorizontalScrollView>
