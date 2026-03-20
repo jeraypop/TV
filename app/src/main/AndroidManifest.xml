@@ -32,20 +32,19 @@
         android:name=".App"
         android:allowBackup="false"
         android:appCategory="video"
+        android:enableOnBackInvokedCallback="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
+        android:pageSizeCompat="enabled"
         android:requestLegacyExternalStorage="true"
+        android:resizeableActivity="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
+        android:theme="@style/Theme.App"
         android:usesCleartextTraffic="true"
         tools:replace="android:allowBackup">
-
-        <meta-data
-            android:name="android.max_aspect"
-            android:value="2.5" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -60,13 +59,19 @@
         </provider>
 
         <provider
-            android:name="com.fongmi.quickjs.Provider"
-            android:authorities="com.fongmi.quickjs.provider"
-            android:exported="false" />
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="com.fongmi.android.tv.Startup"
+                android:value="androidx.startup" />
+        </provider>
 
         <activity
             android:name=".ui.activity.CrashActivity"
-            android:process=":error_activity" />
+            android:process=":error_activity"
+            android:theme="@style/Theme.Crash" />
 
         <receiver
             android:name=".receiver.ActionReceiver"
@@ -77,6 +82,7 @@
                 <action android:name="${applicationId}.next" />
                 <action android:name="${applicationId}.play" />
                 <action android:name="${applicationId}.pause" />
+                <action android:name="${applicationId}.audio" />
             </intent-filter>
         </receiver>
 
@@ -96,6 +102,53 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </service>
+
+        <activity
+            android:name="com.fongmi.android.tv.adutil.SplashADActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:taskAffinity="com.qidong.miao.fangchehui.view.activity.SplashADActivity">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="miaoqidong"
+                    android:scheme="tangboshu" />
+            </intent-filter>
+        </activity>
+        <provider
+            android:name="com.qq.e.comm.GDTFileProvider"
+            android:authorities="${applicationId}.gdt.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/gdt_file_path" />
+        </provider>
+        <provider
+            android:name="com.bytedance.sdk.openadsdk.TTFileProvider"
+            android:authorities="${applicationId}.TTFileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/csj_file_paths" />
+        </provider>
+        <provider
+            android:name="com.bytedance.sdk.openadsdk.multipro.TTMultiProvider"
+            android:authorities="${applicationId}.TTMultiProvider"
+            android:exported="false" />
 
     </application>
 </manifest>
